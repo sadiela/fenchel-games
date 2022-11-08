@@ -8,6 +8,25 @@ def FTRL(g, t):
 
 FUNCTION_DICT = {"FTRL" : FTRL}
 
+### POWER FUNCTION: p,q =2 ###
+
+class PowerFenchel:
+    def __init__(self, p,q):
+        self.p = p
+        self.q = q
+
+    def fenchel(self,theta, p=2, q=2): 
+        return (1/2)* np.pow(np.linalg.norm(theta, ord=q), q)
+
+    def payoff(self, x,y, p=2, q=2):
+        np.dot(x,y) - self.fenchel(y, p, q)
+
+    def grad_x(self, x,y):
+        return y
+
+    def grad_y(self, x,y):
+        return x-y
+
 class Fenchel_Game:
 
     def __init__(self, f, iterations, weights, d = 1):
@@ -22,13 +41,13 @@ class Fenchel_Game:
         self.T = iterations
         self.alpha = weights    # Doesn't do anything yet
 
-        self.x = np.random.rand(self.d, self.T)#, dtype = float)
+        self.x = np.random.rand(self.d, self.T+1)#, dtype = float)
         self.x[:,0] = 0.5
-        self.y = np.random.rand(self.d, self.T) #, dtype = float)
+        self.y = np.random.rand(self.d, self.T+1) #, dtype = float)
         self.y[:,0] = 0.5
 
-        self.gx = np.random.rand(self.d, self.T) #zeros(shape = (self.d, self.T), dtype = float)
-        self.gy = np.random.rand(self.d, self.T) #zeros(shape = (self.d, self.T), dtype = float)
+        self.gx = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
+        self.gy = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
 
     def set_player(self, player_name, alg_name, params = None):
 
@@ -40,16 +59,30 @@ class Fenchel_Game:
     # This just runs FTRL vs. FTRL like the homework
     def run(self):
 
-        for t in range(0, self.T):
+        for t in range(1, self.T):
+
+            cur_y = self.algo_Y(self.gy[:, 0:t], t)
+            if cur_y < -10:
+                self.y[:, t] = -10
+            elif cur_y > 10: 
+                self.y[:, t] = 10
+            else: 
+                self.y[:, t] = cur_y
 
             # Compute the subgradients
-            self.gx[:, t] = grad_power_x(self.x[:,t], self.y[:,t]) # self.y[:, t] - 1
-            self.gy[:, t] = -grad_power_y(self.x[:,t], self.y[:,t]) # 1 - self.x[:, t]
-
+            self.gx[:, t] = self.f.grad_x(self.x[:,t-1], self.y[:,t]) # self.y[:, t] - 1
 
             # Run iteration t
-            self.x[:, t] = self.algo_X(self.gx[:, 0:t], t+1)
-            self.y[:, t] = self.algo_Y(self.gy[:, 0:t], t+1)
+            cur_x = self.algo_X(self.gx[:, 0:t+1], t)
+            if cur_x < -10:
+                self.x[:, t] = -10
+            elif cur_x > 10: 
+                self.x[:, t] = 10
+            else: 
+                self.x[:, t] = cur_x
+
+
+            self.gy[:, t+1] = -self.f.grad_y(self.x[:,t], self.y[:,t]) # 1 - self.x[:, t]
 
             #print("xys", self.x[:, t],self.y[:, t], "gs:", self.gx[:, t],self.gy[:, t])
 
@@ -63,12 +96,12 @@ class Fenchel_Game:
             #self.gx[t] = getSubgradient(self.lt_x, x[t])
             #self.gy[t] = getSubgradient(self.lt_y, y[t])
 
-        self.x_star = np.average(self.x)
-        self.y_star = np.average(self.y)
+        self.x_star = np.average(self.x[:,:-1])
+        self.y_star = np.average(self.y[:,:-1])
 
     def plot_trajectory_2D(self):
 
-        plt.plot(self.x[0, :], self.y[0, :], '--b', linewidth = 1.0)
+        plt.plot(self.x[0, :-1], self.y[0, :-1], '--b', linewidth = 1.0)
         plt.show()
 
     def get_subgradient(f, val):
@@ -78,19 +111,6 @@ class Fenchel_Game:
 #alpha = np.ones((1, T))
 #x = np.zeros((d, T))
 #y = np.zeros((d, T))
-
-### POWER FUNCTION: p,q =2 ###
-def power_fenchel(theta, p=2, q=2): 
-    return (1/2)* np.pow(np.linalg.norm(theta, ord=q), q)
-
-def power_payoff(x,y):
-    np.dot(x,y) - power_fenchel(y)
-
-def grad_power_x(x,y):
-    return y
-
-def grad_power_y(x,y):
-    return x-y
 
 
 def g_fenchel_hinge(): 
@@ -139,9 +159,10 @@ if __name__ == "__main__":
     
     m_game.plot_trajectory_2D()'''
 
-    T = 1000
+    function = PowerFenchel(2,2)
+    T = 10000
     alpha_t = np.ones(shape = (1, T), dtype = int)
-    m_game = Fenchel_Game(f = power_payoff, iterations=T, weights=alpha_t, d = 1)
+    m_game = Fenchel_Game(f = function, iterations=T, weights=alpha_t, d = 1)
 
     m_game.set_player("X", "FTRL", params = None)
     m_game.set_player("Y", "FTRL", params = None)
@@ -149,6 +170,7 @@ if __name__ == "__main__":
     m_game.run()
     
     print("Saddle Point (x*, y*) = (%0.3f, %0.3f)" % (m_game.x_star, m_game.y_star))
+    print("Final iterate:",m_game.x[:,-2], m_game.y[:,-2])
     
     m_game.plot_trajectory_2D()
 
