@@ -1,6 +1,17 @@
 import numpy as np 
 import matplotlib.pyplot as plt
 
+#### NO REGRET ALGORITHMS ####
+
+def OMD():
+    return 0
+
+def OOMD():
+    return 0
+
+def FTL():
+    return 0
+
 def FTRL(g, t):
     return -np.sum(g, axis = 1) / np.sqrt(t)
 
@@ -12,6 +23,7 @@ FUNCTION_DICT = {"FTRL" : FTRL}
 
 class PowerFenchel:
     def __init__(self, p,q):
+        self.name = "Power function" 
         self.p = p
         self.q = q
 
@@ -27,9 +39,25 @@ class PowerFenchel:
     def grad_y(self, x,y):
         return x-y
 
+class ExpFenchel:
+    def __init__(self):
+        self.name = "Exponential function"
+
+    def fenchel(self,theta): 
+        return theta* np.log(theta) - theta
+
+    def payoff(self, x,y):
+        np.dot(x,y) - self.fenchel(y)
+
+    def grad_x(self, x,y):
+        return y
+
+    def grad_y(self, x,y):
+        return x- np.log(y)
+
 class Fenchel_Game:
 
-    def __init__(self, f, iterations, weights, d = 1):
+    def __init__(self, f, xbounds, ybounds, iterations, weights, d = 1):
         
         self.f = f
         self.d = d
@@ -37,6 +65,8 @@ class Fenchel_Game:
         self.y_star = 0
         self.Player_X = None
         self.Player_Y = None
+        self.xbounds = xbounds
+        self.ybounds = ybounds
 
         self.T = iterations
         self.alpha = weights    # Doesn't do anything yet
@@ -61,40 +91,23 @@ class Fenchel_Game:
 
         for t in range(1, self.T):
 
-            cur_y = self.algo_Y(self.gy[:, 0:t], t)
-            if cur_y < -10:
-                self.y[:, t] = -10
-            elif cur_y > 10: 
-                self.y[:, t] = 10
-            else: 
-                self.y[:, t] = cur_y
+            # update y
+            self.y[:,t] = np.minimum(np.maximum(self.algo_Y(self.gy[:, 0:t], t), self.ybounds[0]), self.ybounds[1])
 
             # Compute the subgradients
-            self.gx[:, t] = self.f.grad_x(self.x[:,t-1], self.y[:,t]) # self.y[:, t] - 1
+            self.gx[:, t] = self.f.grad_x(self.x[:,t-1], self.y[:,t])
 
-            # Run iteration t
-            cur_x = self.algo_X(self.gx[:, 0:t+1], t)
-            if cur_x < -10:
-                self.x[:, t] = -10
-            elif cur_x > 10: 
-                self.x[:, t] = 10
-            else: 
-                self.x[:, t] = cur_x
+            # update x based on new y value
+            self.x[:,t] = np.minimum(np.maximum(self.algo_X(self.gx[:, 0:t+1], t), self.xbounds[0]), self.xbounds[1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
 
-
+            # new gy subgradient
             self.gy[:, t+1] = -self.f.grad_y(self.x[:,t], self.y[:,t]) # 1 - self.x[:, t]
 
             #print("xys", self.x[:, t],self.y[:, t], "gs:", self.gx[:, t],self.gy[:, t])
 
-            #print(self.x[:, t],self.y[:, t])
-
             # Get the losses - doesn't do anything yet
             #self.lt_x[t] = self.f(x(t), y(t))
             #self.lt_y[t] = -self.f(x(t), y(t))
-
-            # Doesn't do anything yet
-            #self.gx[t] = getSubgradient(self.lt_x, x[t])
-            #self.gy[t] = getSubgradient(self.lt_y, y[t])
 
         self.x_star = np.average(self.x[:,:-1])
         self.y_star = np.average(self.y[:,:-1])
@@ -111,25 +124,6 @@ class Fenchel_Game:
 #alpha = np.ones((1, T))
 #x = np.zeros((d, T))
 #y = np.zeros((d, T))
-
-
-def g_fenchel_hinge(): 
-    return 0
-
-def f():
-    return 0
-
-def g(x,y):
-    return 0 
-
-def OMD():
-    return 0
-
-def OOMD():
-    return 0
-
-def FTL():
-    return 0
 
 def OL_Y(t, lxt, yt):
     print("Player Y taking turn t = %d" % t)
@@ -159,10 +153,12 @@ if __name__ == "__main__":
     
     m_game.plot_trajectory_2D()'''
 
-    function = PowerFenchel(2,2)
-    T = 10000
+    function = PowerFenchel(2,2) #ExpFenchel()
+    T = 100
     alpha_t = np.ones(shape = (1, T), dtype = int)
-    m_game = Fenchel_Game(f = function, iterations=T, weights=alpha_t, d = 1)
+    xbounds = [-10,10]
+    ybounds = [-10,10]
+    m_game = Fenchel_Game(f = function, xbounds=xbounds, ybounds=ybounds, iterations=T, weights=alpha_t, d = 1)
 
     m_game.set_player("X", "FTRL", params = None)
     m_game.set_player("Y", "FTRL", params = None)
