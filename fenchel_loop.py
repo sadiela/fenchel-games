@@ -23,7 +23,7 @@ FUNCTION_DICT = {"FTRL" : FTRL}
 
 class PowerFenchel:
     def __init__(self, p,q):
-        self.name = "Power function" 
+        self.name = "Power function (fenchel)" 
         self.p = p
         self.q = q
 
