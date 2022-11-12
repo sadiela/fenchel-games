@@ -1,5 +1,6 @@
 import numpy as np 
 import matplotlib.pyplot as plt
+import csv as csv
 
 #### NO REGRET ALGORITHMS ####
 
@@ -9,11 +10,56 @@ def OMD():
 def OOMD():
     return 0
 
-def FTL():
-    return 0
+#def FTL():
+#    return 0
 
-def FTRL(g, t):
-    return -np.sum(g, axis = 1) / np.sqrt(t)
+# This uses the regularizer \psi(t) = 0.5 * sqrt(t) * |x|^2
+#def FTRL(g, t):
+#    return -np.sum(g, axis = 1) / np.sqrt(t)
+
+class FTRL:
+
+    def __init__(self):
+        self.name = "FTRL"
+
+    def get_update(self, g, t):
+        return -np.sum(g, axis = 1) / np.sqrt(t)
+
+class BestResponse:
+
+    # Might need some projections here...This is also very messy, need to be careful about who is actually running BestResp
+    def __init__(self, d, f, X, Y):
+        self.name = "BestResp"
+        self.d = d
+        self.f = f              # This is the Function Wrapper
+        self.X = X
+        self.Y = Y
+
+    # For player X, f(x, yt) = <x|yt> - f*(yt); this quantity is minimized for bounded domain X, we just need to match signs
+    # 1) Assume X is bounded by hypercube - then each axis is separable, and we can just compare axes
+    # 2) Assume X is bounded by L2 sphere or some other object
+    def get_update_x(self, x, y, xbounds):
+
+        x_ret = np.ones(shape = (self.d, 1))
+        for i in range(0, self.d):
+            x_ret[i] = max(abs(xbounds[i][0]), abs(xbounds[i][1])) * -1 * np.sign(y[i])
+
+        return x_ret
+
+    # This doesn't do anything yet either
+    def get_update_y(self, x, y, t, ybounds):
+        return x
+
+
+class FTL:
+
+    def __init__(self, z0):
+        self.name = "FTL"
+        self.z0 = z0
+
+    # This doesn't do anything
+    def get_update_y(self, x, t):
+        return np.average(x, axis = 1)
 
 #def get_subgradient():
 
@@ -27,17 +73,17 @@ class PowerFenchel:
         self.p = p
         self.q = q
 
-    def fenchel(self,theta, p=2, q=2): 
-        return (1/2)* np.pow(np.linalg.norm(theta, ord=q), q)
+    def fenchel(self, theta, p = 2, q = 2): 
+        return (1/2) * np.pow(np.linalg.norm(theta, ord = q), q)
 
-    def payoff(self, x,y, p=2, q=2):
-        np.dot(x,y) - self.fenchel(y, p, q)
+    def payoff(self, x,y, p = 2, q = 2):
+        return np.dot(x, y) - self.fenchel(y, p, q)
 
-    def grad_x(self, x,y):
+    def grad_x(self, x, y):
         return y
 
-    def grad_y(self, x,y):
-        return x-y
+    def grad_y(self, x, y):
+        return x - y
 
 class ExpFenchel:
     def __init__(self):
@@ -47,7 +93,7 @@ class ExpFenchel:
         return theta* np.log(theta) - theta
 
     def payoff(self, x,y):
-        np.dot(x,y) - self.fenchel(y)
+        return np.dot(x,y) - self.fenchel(y)
 
     def grad_x(self, x,y):
         return y
@@ -71,37 +117,73 @@ class Fenchel_Game:
         self.T = iterations
         self.alpha = weights    # Doesn't do anything yet
 
-        self.x = np.random.rand(self.d, self.T+1)#, dtype = float)
-        self.x[:,0] = 0.5
-        self.y = np.random.rand(self.d, self.T+1) #, dtype = float)
-        self.y[:,0] = 0.5
+        self.x = np.zeros(shape = (self.d, self.T+1), dtype = float)
+        self.x[:, 0] = 0.4
 
-        self.gx = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
-        self.gy = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
+        self.y = np.zeros(shape = (self.d, self.T+1), dtype = float)
+        self.y[:, 0] = 0.3
+
+        self.gx = np.zeros(shape = (self.d, self.T+1), dtype = float)
+        self.gy = np.zeros(shape = (self.d, self.T+1), dtype = float)
+
+        self.gx[:, 0] = self.f.grad_x(self.x[:, 0], self.y[:, 0])
+        self.gy[:, 0] = -self.f.grad_y(self.x[:, 0], self.y[:, 0])
+
+        # This is the old init style, will remove once we verify style above works
+        #self.x = np.random.rand(self.d, self.T+1)#, dtype = float)
+        #self.x[:,0] = 0.5
+        #self.y = np.random.rand(self.d, self.T+1) #, dtype = float)
+        #self.y[:,0] = 0.5
+
+        #self.gx = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
+        #self.gy = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
 
     def set_player(self, player_name, alg_name, params = None):
 
         if player_name == "X":
-            self.algo_X = FUNCTION_DICT[alg_name]
+            self.algo_X = BestResponse(self.d, self.f, self.xbounds, self.ybounds)
+            #self.algo_X = FTRL()
         elif player_name == "Y":
-            self.algo_Y = FUNCTION_DICT[alg_name]
+            #self.algo_Y = FTRL()
+            self.algo_Y = FTL(z0 = 1)
+
+            self.y[:, 0] = self.algo_Y.z0
+            self.gy[:, 0] = -self.f.grad_y(self.x[:, 0], self.y[:, 0])
+
+
+        #if player_name == "X":
+        #    self.algo_X = FUNCTION_DICT[alg_name]
+        #elif player_name == "Y":
+        #    self.algo_Y = FUNCTION_DICT[alg_name]
 
     # This just runs FTRL vs. FTRL like the homework
     def run(self):
 
         for t in range(1, self.T):
 
+            print("Updating round t = %d" % t)
+
             # update y
-            self.y[:,t] = np.minimum(np.maximum(self.algo_Y(self.gy[:, 0:t], t), self.ybounds[0]), self.ybounds[1])
+            print("--> Return y[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gy[0, 0:t]), t-1))
+            #self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update(self.gy[:, 0:t], t+1), self.ybounds[0][0]), self.ybounds[0][1])
+            self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update_y(self.x[:, 0:t], self.y[:, 0:t]), self.ybounds[0][0]), self.ybounds[0][1])
+            print("y[%d] = %lf" % (t, self.y[:, t]))
 
             # Compute the subgradients
-            self.gx[:, t] = self.f.grad_x(self.x[:,t-1], self.y[:,t])
+            print("--> Update gx[%d], using f(x, y[%d])" % (t, t))
+            self.gx[:, t] = self.f.grad_x(self.x[:, t-1], self.y[:, t])
+            print("gx[%d] = %lf" % (t, self.gx[:, t]))
 
             # update x based on new y value
-            self.x[:,t] = np.minimum(np.maximum(self.algo_X(self.gx[:, 0:t+1], t), self.xbounds[0]), self.xbounds[1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
+            print("--> Return x[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gx[0, 0:t+1]), t))
+            #self.x[:, t] = np.minimum(np.maximum(self.algo_X.get_update(self.gx[:, 0:t+1], t+1), self.xbounds[0][0]), self.xbounds[0][1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
+            self.x[:, t] = np.minimum(np.maximum(self.algo_X.get_update_x(self.x[:, t], self.y[:, t], self.xbounds), self.xbounds[0][0]), self.xbounds[0][1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
+            print("x[%d] = %lf" % (t, self.x[:, t]))
 
             # new gy subgradient
-            self.gy[:, t+1] = -self.f.grad_y(self.x[:,t], self.y[:,t]) # 1 - self.x[:, t]
+            print("--> Update gy[%d], using f(x[%d], y[%d])" % (t, t, t))
+            self.gy[:, t+1] = -self.f.grad_y(self.x[:, t], self.y[:, t]) # 1 - self.x[:, t]
+            print("gy[%d] = %lf" % (t+1, self.gy[:, t+1]))
 
             #print("xys", self.x[:, t],self.y[:, t], "gs:", self.gx[:, t],self.gy[:, t])
 
@@ -109,13 +191,39 @@ class Fenchel_Game:
             #self.lt_x[t] = self.f(x(t), y(t))
             #self.lt_y[t] = -self.f(x(t), y(t))
 
-        self.x_star = np.average(self.x[:,:-1])
-        self.y_star = np.average(self.y[:,:-1])
+        self.x_star = np.average(self.x[:, :-1])
+        self.y_star = np.average(self.y[:, :-1])
 
     def plot_trajectory_2D(self):
 
         plt.plot(self.x[0, :-1], self.y[0, :-1], '--b', linewidth = 1.0)
+        plt.plot(self.x[0, :-1], self.y[0, :-1], '*r', linewidth = 1.0)
         plt.show()
+
+    def save_trajectories(self):
+
+        log_file = "x_" + self.algo_X.name + "_y_" + self.algo_Y.name + "_data.csv"
+
+        with open(log_file, 'w', newline = '') as csvfile:
+            writer = csv.writer(csvfile, delimiter = ',')
+            writer.writerow(self.x[0, :])
+            writer.writerow(self.y[0, :])
+        csvfile.close()
+
+        '''
+        log_file_x = "x_data.csv"
+        log_file_y = "y_data.csv"
+
+        with open(log_file_x, 'w', newline = '') as csvfile:
+            writer = csv.writer(csvfile, delimiter = ',')
+            writer.writerow(self.x[0, :])
+        csvfile.close()
+
+        with open(log_file_y, 'w', newline = '') as csvfile:
+            writer = csv.writer(csvfile, delimiter = ',')
+            writer.writerow(self.y[0, :])
+        csvfile.close()
+        '''
 
     def get_subgradient(f, val):
         return 0
@@ -153,11 +261,15 @@ if __name__ == "__main__":
     
     m_game.plot_trajectory_2D()'''
 
-    function = PowerFenchel(2,2) #ExpFenchel()
-    T = 100
+    function = PowerFenchel(p = 2, q = 2) #ExpFenchel()
+    T = 10
     alpha_t = np.ones(shape = (1, T), dtype = int)
-    xbounds = [-10,10]
-    ybounds = [-10,10]
+    xbounds = [[-10, 10]]
+    ybounds = [[-10, 10]]
+
+    print(xbounds[0][0])
+    print(xbounds[0][1])
+
     m_game = Fenchel_Game(f = function, xbounds=xbounds, ybounds=ybounds, iterations=T, weights=alpha_t, d = 1)
 
     m_game.set_player("X", "FTRL", params = None)
@@ -169,6 +281,8 @@ if __name__ == "__main__":
     print("Final iterate:",m_game.x[:,-2], m_game.y[:,-2])
     
     m_game.plot_trajectory_2D()
+
+    m_game.save_trajectories()
 
     # schedules
     #T = 10000 # number of rounds
