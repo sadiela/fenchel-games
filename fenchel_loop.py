@@ -28,10 +28,11 @@ class FTRL:
 class BestResponse:
 
     # Might need some projections here...This is also very messy, need to be careful about who is actually running BestResp
-    def __init__(self, d, f, X, Y):
+    def __init__(self, d, f, weights, X, Y):
         self.name = "BestResp"
         self.d = d
         self.f = f              # This is the Function Wrapper
+        self.alpha_t = weights
         self.X = X
         self.Y = Y
 
@@ -42,7 +43,7 @@ class BestResponse:
 
         x_ret = np.ones(shape = (self.d, 1))
         for i in range(0, self.d):
-            x_ret[i] = max(abs(xbounds[i][0]), abs(xbounds[i][1])) * -1 * np.sign(y[i])
+            x_ret[i] = self.alpha_t[i] * max(abs(xbounds[i][0]), abs(xbounds[i][1])) * -1 * np.sign(y[i])
 
         return x_ret
 
@@ -53,13 +54,19 @@ class BestResponse:
 
 class FTL:
 
-    def __init__(self, z0):
+    def __init__(self, d, z0, weights):
         self.name = "FTL"
+        self.d = d
         self.z0 = z0
+        self.alpha_t = weights
 
     # This doesn't do anything
     def get_update_y(self, x, t):
-        return np.average(x, axis = 1)
+
+        weighted_sum = np.zeros(shape = (self.d, 1))
+        for i in range(0, t):
+            weighted_sum += self.alpha_t[i] * x[:, i]
+        return weighted_sum / sum(self.alpha_t[0:t])
 
 #def get_subgradient():
 
@@ -118,16 +125,14 @@ class Fenchel_Game:
         self.alpha = weights    # Doesn't do anything yet
 
         self.x = np.zeros(shape = (self.d, self.T+1), dtype = float)
-        self.x[:, 0] = 0.4
-
+        
         self.y = np.zeros(shape = (self.d, self.T+1), dtype = float)
-        self.y[:, 0] = 0.3
+       
 
         self.gx = np.zeros(shape = (self.d, self.T+1), dtype = float)
         self.gy = np.zeros(shape = (self.d, self.T+1), dtype = float)
 
-        self.gx[:, 0] = self.f.grad_x(self.x[:, 0], self.y[:, 0])
-        self.gy[:, 0] = -self.f.grad_y(self.x[:, 0], self.y[:, 0])
+        
 
         # This is the old init style, will remove once we verify style above works
         #self.x = np.random.rand(self.d, self.T+1)#, dtype = float)
@@ -141,15 +146,18 @@ class Fenchel_Game:
     def set_player(self, player_name, alg_name, params = None):
 
         if player_name == "X":
-            self.algo_X = BestResponse(self.d, self.f, self.xbounds, self.ybounds)
+            self.algo_X = BestResponse(self.d, self.f, self.alpha, self.xbounds, self.ybounds)
+            self.x[:, 0] = 0.4
+
             #self.algo_X = FTRL()
         elif player_name == "Y":
             #self.algo_Y = FTRL()
-            self.algo_Y = FTL(z0 = 1)
+            self.algo_Y = FTL(z0 = 0.3, d = self.d, weights = self.alpha)
 
             self.y[:, 0] = self.algo_Y.z0
-            self.gy[:, 0] = -self.f.grad_y(self.x[:, 0], self.y[:, 0])
-
+            
+        self.gx[:, 0] = self.f.grad_x(self.x[:, 0], self.y[:, 0])
+        self.gy[:, 0] = -self.f.grad_y(self.x[:, 0], self.y[:, 0])
 
         #if player_name == "X":
         #    self.algo_X = FUNCTION_DICT[alg_name]
@@ -166,12 +174,12 @@ class Fenchel_Game:
             # update y
             print("--> Return y[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gy[0, 0:t]), t-1))
             #self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update(self.gy[:, 0:t], t+1), self.ybounds[0][0]), self.ybounds[0][1])
-            self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update_y(self.x[:, 0:t], self.y[:, 0:t]), self.ybounds[0][0]), self.ybounds[0][1])
+            self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update_y(self.x[:, 0:t], t), self.ybounds[0][0]), self.ybounds[0][1])
             print("y[%d] = %lf" % (t, self.y[:, t]))
 
             # Compute the subgradients
             print("--> Update gx[%d], using f(x, y[%d])" % (t, t))
-            self.gx[:, t] = self.f.grad_x(self.x[:, t-1], self.y[:, t])
+            self.gx[:, t] = self.alpha[t] * self.f.grad_x(self.x[:, t-1], self.y[:, t])
             print("gx[%d] = %lf" % (t, self.gx[:, t]))
 
             # update x based on new y value
@@ -182,7 +190,7 @@ class Fenchel_Game:
 
             # new gy subgradient
             print("--> Update gy[%d], using f(x[%d], y[%d])" % (t, t, t))
-            self.gy[:, t+1] = -self.f.grad_y(self.x[:, t], self.y[:, t]) # 1 - self.x[:, t]
+            self.gy[:, t+1] = -self.alpha[t] * self.f.grad_y(self.x[:, t], self.y[:, t]) # 1 - self.x[:, t]
             print("gy[%d] = %lf" % (t+1, self.gy[:, t+1]))
 
             #print("xys", self.x[:, t],self.y[:, t], "gs:", self.gx[:, t],self.gy[:, t])
@@ -198,6 +206,30 @@ class Fenchel_Game:
 
         plt.plot(self.x[0, :-1], self.y[0, :-1], '--b', linewidth = 1.0)
         plt.plot(self.x[0, :-1], self.y[0, :-1], '*r', linewidth = 1.0)
+        plt.show()
+
+    def plot_xbar(self):
+
+        weighted_sum = np.zeros(shape = (self.d, 1))
+        xbar = np.zeros(shape = (self.d, self.T))
+
+        for t in range(0, self.T):
+            print(sum(self.alpha[0:t]))
+            weighted_sum += (self.alpha[t] * self.x[:, t])
+            xbar[:, t] = weighted_sum / np.sum(self.alpha[0:t+1])
+            print(xbar[:, t])
+
+        t_plot = np.linspace(1, self.T, self.T)
+
+        plt.plot(t_plot, xbar[0, :], '--b', linewidth = 1.0)
+        #plt.plot(self.x[0, :-1], self.y[0, :-1], '*r', linewidth = 1.0)
+        plt.show()
+
+    def plot_x(self):
+
+        t_plot = np.linspace(1, self.T, self.T)
+        plt.plot(t_plot, self.x[0, 0:self.T], '--b', linewidth = 1.0)
+        #plt.plot(self.x[0, :-1], self.y[0, :-1], '*r', linewidth = 1.0)
         plt.show()
 
     def save_trajectories(self):
@@ -263,7 +295,9 @@ if __name__ == "__main__":
 
     function = PowerFenchel(p = 2, q = 2) #ExpFenchel()
     T = 10
-    alpha_t = np.ones(shape = (1, T), dtype = int)
+    #alpha_t = np.ones(shape = (1, T), dtype = int)
+    alpha_t = np.linspace(1, T, T)
+    print(alpha_t)
     xbounds = [[-10, 10]]
     ybounds = [[-10, 10]]
 
@@ -283,6 +317,8 @@ if __name__ == "__main__":
     m_game.plot_trajectory_2D()
 
     m_game.save_trajectories()
+
+    m_game.plot_xbar()
 
     # schedules
     #T = 10000 # number of rounds

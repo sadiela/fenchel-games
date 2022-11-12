@@ -24,8 +24,10 @@ def FrankeWolfeLoop(T, xbounds, f, x_t):
 
     for t in range(0,T): 
         s_t = f.find_s(x_t, xbounds)
+        print("st", s_t)
         x_t = x_t + (2/(t+2))*(s_t-x_t)
-        x_ts.append(np.linalg.norm(x_t))
+        #x_ts.append(np.linalg.norm(x_t))
+        x_ts.append(x_t)
         print(x_t)
 
     print(x_t)
@@ -52,20 +54,25 @@ def NAG(T, f, x_t, beta=0.5):
 
 if __name__ == "__main__":
     # Franke-Wolfe Training loop
-    T = 1000
+    T = 10
     xbounds = [-10,10]
     f = PowerFunction(2,2)
 
     x2_t = np.array([10,-10])
 
-    x2_ts = NAG(T, f, x2_t)
-    plt.plot(x2_ts)
-    plt.title("NAG Algorithm")
-    plt.show()
+
+    #x2_ts = NAG(T, f, x2_t)
+    #plt.plot(x2_ts)
+    #plt.title("NAG Algorithm")
+    #plt.show()
 
     x_t = np.array([10,-10])
+    x_t = np.array([0.4])
+    print(x_t)
 
     x_ts = FrankeWolfeLoop(T, xbounds, f, x_t)
+
+    print(x_ts)
     plt.plot(x_ts)
     plt.title("FW Algorithm")
     plt.show()
