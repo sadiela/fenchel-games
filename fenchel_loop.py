@@ -211,17 +211,17 @@ class Fenchel_Game:
     def plot_xbar(self):
 
         weighted_sum = np.zeros(shape = (self.d, 1))
-        xbar = np.zeros(shape = (self.d, self.T))
+        self.xbar = np.zeros(shape = (self.d, self.T))
 
-        for t in range(0, self.T):
+        for t in range(1, self.T):
             print(sum(self.alpha[0:t]))
-            weighted_sum += (self.alpha[t] * self.x[:, t])
-            xbar[:, t] = weighted_sum / np.sum(self.alpha[0:t+1])
-            print(xbar[:, t])
+            weighted_sum += (self.alpha[t-1] * self.x[:, t])
+            self.xbar[:, t] = weighted_sum / np.sum(self.alpha[0:t])
+            print( self.xbar[:, t])
 
         t_plot = np.linspace(1, self.T, self.T)
 
-        plt.plot(t_plot, xbar[0, :], '--b', linewidth = 1.0)
+        plt.plot(t_plot, self.xbar[0, :], '--b', linewidth = 1.0)
         #plt.plot(self.x[0, :-1], self.y[0, :-1], '*r', linewidth = 1.0)
         plt.show()
 
