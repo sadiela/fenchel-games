@@ -1,23 +1,7 @@
 import numpy as np 
 import matplotlib.pyplot as plt
-from scipy.optimize import linprog
 import math
-
-class PowerFunction:
-    def __init__(self, p,q):
-        self.name="Power Function $f(x)=1/2 ||x||^2$"
-        self.p = p
-        self.q = q 
-
-    def f(self,x):
-        return (1/2)* np.pow(np.linalg.norm(x, ord=self.q), self.q)
-    
-    def grad(self, x):
-        return x
-
-    def find_s(self, x_t, xbounds=(-10,10)):
-        res = linprog(x_t, bounds=xbounds)
-        return res.x
+from convex_functions import *
 
 def FrankeWolfeLoop(T, xbounds, f, w_t):
     w_ts = []
@@ -47,6 +31,8 @@ def heavy_ball(T, f, w_0, L=2):
         w_ts.append(w_t)
 
     return w_t[-1]
+
+
 
 # Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)
 def alg_12(T, f, x_t, beta=0.5, L=2):

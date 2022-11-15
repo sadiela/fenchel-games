@@ -1,111 +1,12 @@
 import numpy as np 
 import matplotlib.pyplot as plt
 import csv as csv
-
-#### NO REGRET ALGORITHMS ####
-
-def OMD():
-    return 0
-
-def OOMD():
-    return 0
-
-#def FTL():
-#    return 0
-
-# This uses the regularizer \psi(t) = 0.5 * sqrt(t) * |x|^2
-#def FTRL(g, t):
-#    return -np.sum(g, axis = 1) / np.sqrt(t)
-
-class FTRL:
-
-    def __init__(self):
-        self.name = "FTRL"
-
-    def get_update(self, g, t):
-        return -np.sum(g, axis = 1) / np.sqrt(t) # R(x,t) = 1/2 sqrt(t) ||x||^2
-
-class BestResponse: # implemented for power function only 
-
-    # Might need some projections here...This is also very messy, need to be careful about who is actually running BestResp
-    def __init__(self, d, f, weights, X, Y):
-        self.name = "BestResp"
-        self.d = d
-        self.f = f              # This is the Function Wrapper
-        self.alpha_t = weights
-        self.X = X
-        self.Y = Y
-
-    # For player X, f(x, yt) = <x|yt> - f*(yt); this quantity is minimized for bounded domain X, we just need to match signs
-    # 1) Assume X is bounded by hypercube - then each axis is separable, and we can just compare axes
-    # 2) Assume X is bounded by L2 sphere or some other object
-    def get_update_x(self, x, y, xbounds):
-
-        x_ret = np.ones(shape = (self.d, 1))
-        for i in range(0, self.d):
-            x_ret[i] = self.alpha_t[i] * max(abs(xbounds[i][0]), abs(xbounds[i][1])) * -1 * np.sign(y[i])
-
-        return x_ret
-
-    def get_update_y(self, x, y, t, ybounds):
-        return x
-
-
-class FTL:
-
-    def __init__(self, d, z0, weights):
-        self.name = "FTL"
-        self.d = d
-        self.z0 = z0
-        self.alpha_t = weights
-
-    # This doesn't do anything
-    def get_update_y(self, x, t):
-
-        weighted_sum = np.zeros(shape = (self.d, 1))
-        for i in range(0, t):
-            weighted_sum += self.alpha_t[i] * x[:, i]
-        return weighted_sum / sum(self.alpha_t[0:t])
+from ol_algorithms import *
+from convex_functions import *
 
 #def get_subgradient():
 
-FUNCTION_DICT = {"FTRL" : FTRL}
-
-### POWER FUNCTION: p,q =2 ###
-
-class PowerFenchel:
-    def __init__(self, p,q):
-        self.name = "Power function (fenchel)" 
-        self.p = p
-        self.q = q
-
-    def fenchel(self, theta): 
-        return (1/2) * np.pow(np.linalg.norm(theta, ord = self.q), self.q)
-
-    def payoff(self, x,y):
-        return np.dot(x, y) - self.fenchel(y, self.p, self.q)
-
-    def grad_x(self, x, y):
-        return y
-
-    def grad_y(self, x, y):
-        return x - y
-
-class ExpFenchel:
-    def __init__(self):
-        self.name = "Exponential function"
-
-    def fenchel(self,theta): 
-        return theta* np.log(theta) - theta
-
-    def payoff(self, x,y):
-        return np.dot(x,y) - self.fenchel(y)
-
-    def grad_x(self, x,y):
-        return y
-
-    def grad_y(self, x,y):
-        return x- np.log(y)
+FUNCTION_DICT = {"FTRL" : FTRL, "FTL": FTL, "BestResp": BestResponse, "OMD": OMD, "OOMD": OOMD}
 
 class Fenchel_Game:
 
@@ -128,16 +29,6 @@ class Fenchel_Game:
 
         self.gx = np.zeros(shape = (self.d, self.T+1), dtype = float)
         self.gy = np.zeros(shape = (self.d, self.T+1), dtype = float)
-
-    
-        # This is the old init style, will remove once we verify style above works
-        #self.x = np.random.rand(self.d, self.T+1)#, dtype = float)
-        #self.x[:,0] = 0.5
-        #self.y = np.random.rand(self.d, self.T+1) #, dtype = float)
-        #self.y[:,0] = 0.5
-
-        #self.gx = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
-        #self.gy = np.random.rand(self.d, self.T+1) #zeros(shape = (self.d, self.T), dtype = float)
 
     def set_player(self, player_name, alg_name, params = None):
 
