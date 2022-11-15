@@ -19,38 +19,53 @@ class PowerFunction:
         res = linprog(x_t, bounds=xbounds)
         return res.x
 
-def FrankeWolfeLoop(T, xbounds, f, x_t):
-    x_ts = []
+def FrankeWolfeLoop(T, xbounds, f, w_t):
+    w_ts = []
 
     for t in range(0,T): 
-        s_t = f.find_s(x_t, xbounds)
+        s_t = f.find_s(w_t, xbounds)
         print("st", s_t)
-        x_t = x_t + (2/(t+2))*(s_t-x_t)
+        w_t = w_t + (2/(t+2))*(s_t-w_t)
         #x_ts.append(np.linalg.norm(x_t))
-        x_ts.append(x_t)
-        print(x_t)
+        w_ts.append(w_t)
+        print(w_t)
 
-    print(x_t)
-    return x_ts
+    print(w_t)
+    return w_ts
 
-def NAG(T, f, x_t, beta=0.5):
+
+# Heavy Ball Method
+def heavy_ball(T, f, w_0, L=2):
+    w_ts = [w_0, w_0]
+
+    for t in range(1,T): 
+        eta_t = t/(4*(t+1)*L)
+        beta_t = (t-2)/(t+1)
+        v_t = w_ts[-1] - w_ts[-2]
+        w_t = w_ts[-1] - eta_t * f.grad(w_ts[-1]) + beta_t*v_t
+
+        w_ts.append(w_t)
+
+    return w_t[-1]
+
+# Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)
+def alg_12(T, f, x_t, beta=0.5, L=2):
+    # NEED TO FIX
     x_ts = []
     lambda_t = 0.5
     y_t = 0
 
-    for t in range(0,T):
-        lambda_t1 = (1-math.sqrt(1 + 4* lambda_t**2))/2
-        gamma_t = (1-lambda_t)/lambda_t1
-        y_t1 = x_t - (1/beta) * f.grad(x_t)
-        x_t = (1-gamma_t)*y_t1 + gamma_t*y_t
-        print(x_t)
-        x_ts.append(x_t)
+    for t in range(1,T):
+        theta_t = t/(2*(t+1)*L)
+        beta_t = (t-2)/(t+1)
+        w_t1 = z_t - theta_t * f.grad(z_t)
+        z_t1 = w_t + beta_t(w_t1 - w_t)
 
-        # save for use in next iteration
-        lambda_t = lambda_t1
-        y_t = y_t1
 
-    return x_ts
+        z_t = z_t1
+        w_t = w_t1
+
+    return w_t
 
 if __name__ == "__main__":
     # Franke-Wolfe Training loop

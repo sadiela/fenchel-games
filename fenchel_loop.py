@@ -23,9 +23,9 @@ class FTRL:
         self.name = "FTRL"
 
     def get_update(self, g, t):
-        return -np.sum(g, axis = 1) / np.sqrt(t)
+        return -np.sum(g, axis = 1) / np.sqrt(t) # R(x,t) = 1/2 sqrt(t) ||x||^2
 
-class BestResponse:
+class BestResponse: # implemented for power function only 
 
     # Might need some projections here...This is also very messy, need to be careful about who is actually running BestResp
     def __init__(self, d, f, weights, X, Y):
@@ -47,7 +47,6 @@ class BestResponse:
 
         return x_ret
 
-    # This doesn't do anything yet either
     def get_update_y(self, x, y, t, ybounds):
         return x
 
@@ -80,11 +79,11 @@ class PowerFenchel:
         self.p = p
         self.q = q
 
-    def fenchel(self, theta, p = 2, q = 2): 
-        return (1/2) * np.pow(np.linalg.norm(theta, ord = q), q)
+    def fenchel(self, theta): 
+        return (1/2) * np.pow(np.linalg.norm(theta, ord = self.q), self.q)
 
-    def payoff(self, x,y, p = 2, q = 2):
-        return np.dot(x, y) - self.fenchel(y, p, q)
+    def payoff(self, x,y):
+        return np.dot(x, y) - self.fenchel(y, self.p, self.q)
 
     def grad_x(self, x, y):
         return y
@@ -125,15 +124,12 @@ class Fenchel_Game:
         self.alpha = weights    # Doesn't do anything yet
 
         self.x = np.zeros(shape = (self.d, self.T+1), dtype = float)
-        
         self.y = np.zeros(shape = (self.d, self.T+1), dtype = float)
-       
 
         self.gx = np.zeros(shape = (self.d, self.T+1), dtype = float)
         self.gy = np.zeros(shape = (self.d, self.T+1), dtype = float)
 
-        
-
+    
         # This is the old init style, will remove once we verify style above works
         #self.x = np.random.rand(self.d, self.T+1)#, dtype = float)
         #self.x[:,0] = 0.5
