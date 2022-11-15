@@ -30,9 +30,7 @@ def heavy_ball(T, f, w_0, L=2):
 
         w_ts.append(w_t)
 
-    return w_t[-1]
-
-
+    return w_ts[-1]
 
 # Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)
 def alg_12(T, f, x_t, beta=0.5, L=2):

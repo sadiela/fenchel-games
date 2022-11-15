@@ -16,11 +16,10 @@ class BestResponse: # implemented for power function only
     # For player X, f(x, yt) = <x|yt> - f*(yt); this quantity is minimized for bounded domain X, we just need to match signs
     # 1) Assume X is bounded by hypercube - then each axis is separable, and we can just compare axes
     # 2) Assume X is bounded by L2 sphere or some other object
-    def get_update_x(self, x, y, xbounds):
-
-        x_ret = np.ones(shape = (self.d, 1))
+    def get_update_x(self, x, y, xbounds, t):
+        x_ret = np.ones(shape = (self.d))
         for i in range(0, self.d):
-            x_ret[i] = self.alpha_t[i] * max(abs(xbounds[i][0]), abs(xbounds[i][1])) * -1 * np.sign(y[i])
+            x_ret[i] = self.alpha_t[t] * max(abs(xbounds[i][0]), abs(xbounds[i][1])) * -1 * np.sign(y[i])
 
         return x_ret
 
@@ -42,26 +41,26 @@ class OOMD():
 
 class FTL:
 
-    def __init__(self,f, d, z0, weights):
+    def __init__(self, f, d , weights):
         self.name = "FTL"
         self.d = d
-        self.z0 = z0
         self.alpha_t = weights
         self.f = f
 
     # This doesn't do anything
     def get_update_y(self, x, t):
 
-        weighted_sum = np.zeros(shape = (self.d, 1))
+        weighted_sum = np.zeros((self.d))
         for i in range(0, t):
-            weighted_sum += self.alpha_t[i] * x[:, i]
+            print(x[i])
+            weighted_sum += self.alpha_t[i] * x[i]
         return weighted_sum / sum(self.alpha_t[0:t])
 
 class FTRL:
 
-    def __init__(self, f):
+    def __init__(self):
         self.name = "FTRL"
-        self.f = f # fenchel class function 
+        self.regularizer = r"$\frac{1}{2} \sqrt{t} ||x||^2$"
 
     def get_update(self, g, t):
         return -np.sum(g, axis = 1) / np.sqrt(t) # R(x,t) = 1/2 sqrt(t) ||x||^2
