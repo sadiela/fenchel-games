@@ -27,16 +27,16 @@ class PowerFunction:
 # FENCHEL CONJUGATES # 
 ######################
 class PowerFenchel:
-    def __init__(self, p,q):
+    def __init__(self, p, q):
         self.name = "Power function (fenchel)" 
         self.p = p
         self.q = q
 
     def fenchel(self, theta): 
-        return (1/2) * np.pow(np.linalg.norm(theta, ord = self.q), self.q)
+        return (1/2) * np.power(np.linalg.norm(theta, ord = self.q), self.q)
 
-    def payoff(self, x,y):
-        return np.dot(x, y) - self.fenchel(y, self.p, self.q)
+    def payoff(self, x, y):
+        return np.dot(x, y) - self.fenchel(y)
 
     def grad_x(self, x, y):
         return y

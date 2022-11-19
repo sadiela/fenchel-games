@@ -4,14 +4,16 @@ import csv as csv
 from ol_algorithms import *
 from convex_functions import *
 
-FUNCTION_DICT = {"FTRL" : FTRL, "FTL": FTL, "BestResp": BestResponse, "OMD": OMD, "OOMD": OOMD}
-
 def projection(x, bounds):
     # projection into hypercube
     # for n dimensional x, you will have a list of n sets of bounds
     for i in range(len(bounds)): 
         x[i] = np.minimum(np.maximum(x, bounds[i][0]), bounds[i][1])
     return x
+
+def debug_print(print_str, T):
+    if T <= 100:
+        print(print_str)
 
 class Fenchel_Game:
 
@@ -21,54 +23,76 @@ class Fenchel_Game:
         self.d = d
         self.x_star = 0
         self.y_star = 0
-        self.Player_X = None
-        self.Player_Y = None
         self.xbounds = xbounds
         self.ybounds = ybounds
 
         self.T = iterations
-        self.alpha = weights    # Doesn't do anything yet
+        self.alpha = weights    
 
+        self.acl_x = np.zeros(shape = (1, self.T))
+        self.acl_y = np.zeros(shape = (1, self.T))
+
+        # Initialize each algorithm
         self.x = [x_init] #np.zeros(shape = (self.d, self.T+1), dtype = float)
         self.y = [y_init] # np.zeros(shape = (self.d, self.T+1), dtype = float)
 
+        # Pay loss
+        self.loss_x = [(self.alpha[0] * self.f.payoff(self.x[0], self.y[0]))]
+        self.loss_y = [(self.alpha[0] * -self.f.payoff(self.x[0], self.y[0]))]
+
+        # Update gradients
         self.gx = [self.f.grad_x(self.x[0], self.y[0])] #np.zeros(shape = (self.d, self.T+1), dtype = float)
         self.gy = [-self.f.grad_y(self.x[0], self.y[0])] #np.zeros(shape = (self.d, self.T+1), dtype = float)
+
+        self.acl_x = [self.loss_x[0] / self.alpha[0]]
+        self.acl_y = [self.loss_y[0] / self.alpha[0]]
 
     def set_players(self, x_alg, y_alg):
         self.algo_X = x_alg
         self.algo_Y = y_alg
 
-    # This just runs FTRL vs. FTRL like the homework
-    def run(self, yfirst=True):
+    def run(self, yfirst = True):
         print(self.y[-1], self.x[-1])
-        # FTL + BEST RESP
+
         for t in range(1, self.T):
 
-            print("Updating round t = %d" % t)
+            if t % (self.T/10) == 0:
+                print("Updating round t = %d" % t)
 
             # update y
             if yfirst: 
-                print("--> Return y[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gy), t-1))
+                debug_print("--> Return y[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gy), t-1), self.T)
                 #self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update(self.gy[:, 0:t], t+1), self.ybounds[0][0]), self.ybounds[0][1])
+                
                 self.y.append(projection(self.algo_Y.get_update_y(self.x[:], t), self.ybounds))
-                print("y[%d] = %lf" % (t, self.y[-1]))
+                self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+                self.acl_y.append(np.sum(self.loss_y) / np.sum(self.alpha[0:t+1]))
+                
+                debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
+                debug_print("ly[%d] = -\u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t-1, t, self.loss_y[-1]), self.T)
 
                 # Compute the subgradients
-                print("--> Update gx[%d], using f(x, y[%d])" % (t, t))
+                debug_print("--> Update gx[%d], using f(x, y[%d])" % (t, t), self.T)
                 self.gx.append(self.alpha[t] * self.f.grad_x(self.x[-1], self.y[-1]))
-                print("gx[%d] = %lf" % (t, self.gx[-1]))
+                debug_print("gx[%d] = %lf" % (t, self.gx[-1]), self.T)
 
             # update x based on new y value
-            print("--> Return x[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gx), t))
+            debug_print("--> Return x[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gx), t), self.T)
             #self.x[:, t] = np.minimum(np.maximum(self.algo_X.get_update(self.gx[:, 0:t+1], t+1), self.xbounds[0][0]), self.xbounds[0][1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
             self.x.append(projection(self.algo_X.get_update_x(self.x[-1], self.y[-1], self.xbounds, t), self.xbounds))
-            print("x[%d] = %lf" % (t, self.x[-1]))
+            self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
+            self.acl_x.append(np.sum(self.loss_x) / np.sum(self.alpha[0:t+1]))
+
+            debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
+            debug_print("lx[%d] = \u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t, t, self.loss_x[-1]), self.T)
+
 
             # new gy subgradient
-            print("--> Update gy[%d], using f(x[%d], y[%d])" % (t, t, t))
+            debug_print("--> Update gy[%d], using f(x[%d], y[%d])" % (t, t, t), self.T)
             self.gy.append(-self.alpha[t] * self.f.grad_y(self.x[-1], self.y[-1])) # 1 - self.x[:, t]
-            print("gy[%d] = %lf" % (t+1, self.gy[-1]))
+            debug_print("gy[%d] = %lf" % (t+1, self.gy[-1]), self.T)
+
+            
 
             if not yfirst and t==T-1:
                 print("Finish something")
@@ -79,11 +103,18 @@ class Fenchel_Game:
             #self.lt_x[t] = self.f(x(t), y(t))
             #self.lt_y[t] = -self.f(x(t), y(t))
         print(len(self.x), len(self.y))
-        print(self.x)
+        #print(self.x)
 
-        self.x_star = np.average(np.concatenate(self.x, axis=0), weights=self.alpha, axis=0)
-        self.y_star = np.average(np.concatenate(self.y, axis=0), weights=self.alpha, axis=0)
+        #print(self.x[0].shape)
 
+        print("Fenchel game complete, T = [%d, %d, %d] rounds" % (self.T, len(self.x), len(self.y)))
+
+        
+
+        self.x_star = np.average(np.concatenate(self.x, axis = 0), weights = self.alpha, axis=0)
+        self.y_star = np.average(np.concatenate(self.y, axis = 0), weights = self.alpha, axis=0)
+
+    # Only plot if the data is 2D...difficult to visualize otherwise.
     def plot_trajectory_2D(self):
 
         plt.plot(self.x[:-1], self.y[:-1], '--b', linewidth = 1.0)
@@ -96,10 +127,10 @@ class Fenchel_Game:
         self.xbar = np.zeros(shape = (self.d, self.T))
 
         for t in range(1, self.T):
-            print(sum(self.alpha[0:t]))
+            #print(sum(self.alpha[0:t]))
             weighted_sum += (self.alpha[t-1] * self.x[t])
             self.xbar[:, t] = weighted_sum / np.sum(self.alpha[0:t])
-            print( self.xbar[:, t])
+            #print(self.xbar[:, t])
 
         t_plot = np.linspace(1, self.T, self.T)
 
@@ -123,6 +154,17 @@ class Fenchel_Game:
             writer.writerow(self.x[:])
             writer.writerow(self.y[:])
         csvfile.close()
+
+    def plot_acl(self):
+
+        print("R(T = %d, X) = %lf" % (self.T, self.acl_x[-1]))
+        print("R(T = %d, Y) = %lf" % (self.T, self.acl_y[-1]))
+
+        #t_plot = np.linspace(1, self.T, self.T)
+        plt.plot(self.acl_x, '--b')
+        plt.plot(self.acl_y, '--r')
+        plt.show()
+        
 
 
 if __name__ == "__main__":
