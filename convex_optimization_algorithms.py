@@ -72,6 +72,7 @@ if __name__ == "__main__":
     x_ts = FrankeWolfeLoop(T, xbounds, f, x_t)
 
     print(x_ts)
+    plt.figure()
     plt.plot(x_ts)
     plt.title("FW Algorithm")
     plt.show()

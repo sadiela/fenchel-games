@@ -46,19 +46,23 @@ class OOMD():
 
 class FTL:
 
-    def __init__(self, f, d, weights):
+    def __init__(self, f, d, weights, z0):
         self.name = "FTL"
         self.f = f
         self.d = d
+        self.z0 = z0
         self.alpha_t = weights
 
     def get_update_y(self, x, t):
 
-        weighted_sum = np.zeros(shape = (self.d))
-        for i in range(0, t):
-            #print(x[i])
-            weighted_sum += self.alpha_t[i] * x[i]
-        return weighted_sum / sum(self.alpha_t[0:t])
+        if t == 0:
+            return self.z0
+        else:
+            weighted_sum = np.zeros(shape = (self.d))
+            for i in range(0, t):
+                #print(x[i])
+                weighted_sum += (self.alpha_t[i] * x[i])
+            return weighted_sum / sum(self.alpha_t[0:t])
 
 class FTRL:
 
