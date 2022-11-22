@@ -12,3 +12,6 @@ Final Project for EC500: Introduction to Online Learning
     * No reason to solve the Fenchel game over the corresponding convex optimization algorithm (unless conjugate is "simpler"?)
 2. Good for deriving new algorithms & understanding the connections between seemingly unrelated convex optimization algorithms
 3. Creating a **general library** is hard! Many function- and regularizer-dependent steps. 
+
+# Fun things
+1. How to use the Fenchel conjugate without ever computing (or even knowing) the Fenchel conjugate. 
