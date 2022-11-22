@@ -135,15 +135,6 @@ if __name__ == "__main__":
     xbounds = [-10,10]
     f = PowerFunction(2,2)
 
-    x2_t = np.array([10,-10])
-
-
-    #x2_ts = NAG(T, f, x2_t)
-    #plt.plot(x2_ts)
-    #plt.title("NAG Algorithm")
-    #plt.show()
-
-    #x_t = np.array([10,-10])
     x_0 = np.array([5], dtype='float64')
     print(x_0)
 
@@ -158,7 +149,7 @@ if __name__ == "__main__":
     plt.plot(x_ts_cumulativeGD, color='green', label="CumulativeGradientDescent")
     plt.plot(x_ts_NAG, color='purple', label="NAG")
     plt.plot(x_ts_heavyball, color='orange', label="HeavyBall")
-    
+
     plt.title("Convex Optimization Algorithms")
     plt.legend()
     plt.show()
