@@ -32,8 +32,8 @@ def frankWolfe(f, T, w_0, xbounds):
     w_ts = []
     w_ts.append(w_0)
     for t in range(0,T): 
-        s_t = f.find_s(w_t[-1], xbounds)
-        w_t = w_t[-1] + (2/(t+2))*(s_t-w_t[-1])
+        s_t = f.find_s(w_ts[-1], xbounds)
+        w_t = w_ts[-1] + (2/(t+2))*(s_t-w_ts[-1])
         w_ts.append(w_t)
     return w_ts
 
@@ -111,12 +111,12 @@ def NAG(f, T, w_0, L=2):
         beta_t = (t-2)/(t+1)
         w_t = z_s[-1] - theta_t * f.grad(z_s[-1])
         w_ts.append(w_t)
-        z_t = w_ts[-1] + beta_t(w_ts[-1] - w_ts[-2])
+        z_t = w_ts[-1] + beta_t*(w_ts[-1] - w_ts[-2])
         z_s.append(z_t)
     return w_ts
 
 # Heavy Ball Method
-def heavyBall(T, f, w_0, L=2):
+def heavyBall(f, T, w_0, L=2):
     w_ts = [w_0, w_0]
     for t in range(1,T): 
         eta_t = t/(4*(t+1)*L)
@@ -131,7 +131,7 @@ def heavyBall(T, f, w_0, L=2):
 
 if __name__ == "__main__":
     # Franke-Wolfe Training loop
-    T = 10
+    T = 100
     xbounds = [-10,10]
     f = PowerFunction(2,2)
 
@@ -143,14 +143,21 @@ if __name__ == "__main__":
     #plt.title("NAG Algorithm")
     #plt.show()
 
-    x_t = np.array([10,-10])
-    x_t = np.array([0.4])
-    print(x_t)
+    #x_t = np.array([10,-10])
+    x_0 = np.array([5], dtype='float64')
+    print(x_0)
 
-    x_ts = frankWolfe(T, xbounds, f, x_t)
+    x_ts_FW = frankWolfe(f, T, x_0, xbounds)
+    x_ts_GDAvg = gradDescentAveraging(f, T, x_0, L=5) 
+    x_ts_cumulativeGD = cumulativeGradientDescent(f, T, x_0, R=10, G=10)
+    x_ts_NAG = NAG(f, T, x_0, L=2)
+    x_ts_heavyball = heavyBall(f, T, x_0, L=2)
 
-    print(x_ts)
-    plt.figure()
-    plt.plot(x_ts)
-    plt.title("FW Algorithm")
+    plt.plot(x_ts_FW, color='red', label="FrankWolfe")
+    plt.plot(x_ts_GDAvg, color='blue', label="GradientDescentwithAveraging")
+    plt.plot(x_ts_cumulativeGD, color='green', label="CumulativeGradientDescent")
+    plt.plot(x_ts_NAG, color='purple', label="NAG")
+    plt.plot(x_ts_heavyball, color='orange', label="HeavyBall")
+    plt.title("Convex Optimization Algorithms")
+    plt.legend()
     plt.show()

@@ -7,6 +7,18 @@ from scipy.optimize import linprog
 #############
 # FUNCTIONS # 
 #############
+class AbsoluteValueFunction:
+    def __init__(self):
+        self.name = "Absolute value function $f(x) = |x| $"
+
+    def f(self, x):
+        return np.abs(x)
+
+    def grad(self, x):
+        x[x>0] = 1
+        x[x <=0] = -1
+        return x
+
 class PowerFunction:
     def __init__(self, p,q):
         self.name="Power Function $f(x)=1/2 ||x||^2$"
