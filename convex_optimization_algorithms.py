@@ -3,53 +3,131 @@ import matplotlib.pyplot as plt
 import math
 from convex_functions import *
 
-def FrankeWolfeLoop(T, xbounds, f, w_t):
+# Gradient descent with averaging (different rate depending on smooth or not)
+# (equiv to OMD + bestresp)
+def gradDescentAveraging(f, T, w_0, L=2): # ASSUMING SMOOTH
     w_ts = []
+    w_ts.append(w_0)
+    avg_ws = []
+    eta = 1/(2*L)
+    for t in range(1,T): 
+        w_ts.append(w_ts[-1] - eta*f.grad(w_ts[-1]))
+        avg_ws.append((1/t)*np.sum(w_ts))
+    return avg_ws
 
-    for t in range(0,T): 
-        s_t = f.find_s(w_t, xbounds)
-        print("st", s_t)
-        w_t = w_t + (2/(t+2))*(s_t-w_t)
-        #x_ts.append(np.linalg.norm(x_t))
+# Cumulative gradient descent
+def cumulativeGradientDescent(f, T, w_0, R, G):
+    eta = (R/G)/math.sqrt(T)
+    w_ts = []
+    grad_sum = f.grad(w_0)
+    w_ts.append(w_0)
+    for t in range(1,T):
+        w_t = (1-(1/t)) + (1/t)*eta*grad_sum
         w_ts.append(w_t)
-        print(w_t)
-
-    print(w_t)
+        grad_sum += f.grad(w_t)
     return w_ts
 
+# Frank-Wolfe
+def frankWolfe(f, T, w_0, xbounds):
+    w_ts = []
+    w_ts.append(w_0)
+    for t in range(0,T): 
+        s_t = f.find_s(w_t[-1], xbounds)
+        w_t = w_t[-1] + (2/(t+2))*(s_t-w_t[-1])
+        w_ts.append(w_t)
+    return w_ts
+
+# Linear rate FW 
+
+
+# Single-call extra-gradient with averaging
+'''
+def singleGradientCallExtraGradientWithAveraging(f, T, w_0, L=2, phi, alpha_ts):
+    gamma = 1/L
+    w_halfs = []
+    w_halfs.append(w_0)
+    w_ts = []
+    w_ts.append(w_0)
+    avg_ws = []
+    avg_ws.append(w_0)
+    # PSEUDOCODE
+    for t in range(0,T):
+        w_t = argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
+        w_ts.append(w_t)
+        w_t_12 = argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
+        w_halfs.append(w_t_12)
+        avg_ws.append((1/t+1)*np.sum(w_ts))
+    return avg_w_ts
+'''
+
+# Nesterov's 1-memory method PSEUDOCODE!!!
+'''
+def nesterovOneMemory(f, T, w_0, phi, L=2):
+    w_ts = []
+    w_ts.append(w_0)
+    v_ts = []
+    v_ts.append(w_0)
+    z_ts = []
+    for t in range(1,T):
+        beta_t = 2/(t+1)
+        gamma_t = t/(4*L)
+        z_t = (1-beta_t)*w_ts[-1] + beta_t*v_ts[-1]
+        z_ts.append(z_t)
+        v_t = argmin(gamma_t*np.dot(f.grad(z_t), x) + bregmanDivergence(phi, x, v_ts[-1]))
+        v_ts.append(v_t)
+        w_t = (1-beta_t)*w[t-1]+ beta_t*v_ts[-1]
+        w_ts.append(w_t)
+'''
+
+# Nesterov's infinity-memory method PSEUDOCODE
+'''
+def nesterovInfMemory(f, T, w_0, R, L=2):
+    w_ts = []
+    w_ts.append(w_0)
+    v_ts = []
+    v_ts.append(w_0)
+    z_ts = []
+    for t in range(1,T):
+        beta_t = 2/(t+1)
+        gamma_t = t/(4*L)
+        z_t = (1-beta_t)*w_ts[-1] + beta_t*v_ts[-1]
+        z_ts.append(z_t)
+        v_t = argmin(sum_{s=1}^t gamma_s*np.dot(f.grad(z_s), x) + R.f(x))
+        v_ts.append(v_t)
+        w_t = (1-beta_t)*w[t-1]+ beta_t*v_ts[-1]
+        w_ts.append(w_t)
+'''
+
+# Nesterov's first acceleration method
+# Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)
+def NAG(f, T, w_0, L=2):
+    # NEED TO FIX
+    w_ts = []
+    w_ts.append(w_0)
+    z_s = []
+    z_s.append(w_0)
+    for t in range(1,T):
+        theta_t = t/(2*(t+1)*L)
+        beta_t = (t-2)/(t+1)
+        w_t = z_s[-1] - theta_t * f.grad(z_s[-1])
+        w_ts.append(w_t)
+        z_t = w_ts[-1] + beta_t(w_ts[-1] - w_ts[-2])
+        z_s.append(z_t)
+    return w_ts
 
 # Heavy Ball Method
-def heavy_ball(T, f, w_0, L=2):
+def heavyBall(T, f, w_0, L=2):
     w_ts = [w_0, w_0]
-
     for t in range(1,T): 
         eta_t = t/(4*(t+1)*L)
         beta_t = (t-2)/(t+1)
         v_t = w_ts[-1] - w_ts[-2]
         w_t = w_ts[-1] - eta_t * f.grad(w_ts[-1]) + beta_t*v_t
-
         w_ts.append(w_t)
+    return w_ts
 
-    return w_ts[-1]
-
-# Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)
-def alg_12(T, f, x_t, beta=0.5, L=2):
-    # NEED TO FIX
-    x_ts = []
-    lambda_t = 0.5
-    y_t = 0
-
-    for t in range(1,T):
-        theta_t = t/(2*(t+1)*L)
-        beta_t = (t-2)/(t+1)
-        w_t1 = z_t - theta_t * f.grad(z_t)
-        z_t1 = w_t + beta_t(w_t1 - w_t)
-
-
-        z_t = z_t1
-        w_t = w_t1
-
-    return w_t
+# Nesterov's method (REQUIRES STRONG CONVEXITY AND SMOOTHNESS)
+#     
 
 if __name__ == "__main__":
     # Franke-Wolfe Training loop
@@ -69,7 +147,7 @@ if __name__ == "__main__":
     x_t = np.array([0.4])
     print(x_t)
 
-    x_ts = FrankeWolfeLoop(T, xbounds, f, x_t)
+    x_ts = frankWolfe(T, xbounds, f, x_t)
 
     print(x_ts)
     plt.figure()

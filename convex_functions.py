@@ -23,6 +23,11 @@ class PowerFunction:
         res = linprog(x_t, bounds=xbounds)
         return res.x
 
+#class 
+
+def bregmanDivergence(phi, x, y):
+    return phi.f(x)-phi.f(y) - np.dot(phi.grad(y), x-y)
+
 ######################
 # FENCHEL CONJUGATES # 
 ######################
