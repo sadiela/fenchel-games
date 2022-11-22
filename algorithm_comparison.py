@@ -7,27 +7,31 @@ from ol_algorithms import *
 
 def FW_Recovery():
 
-    f_game = PowerFenchel(p = 2, q = 2) #ExpFenchel()
-    f_opt = PowerFunction(p = 2, q = 2)
+    #f_game = PowerFenchel(p = 2, q = 2) #ExpFenchel()
+    #f_opt = PowerFunction(p = 2, q = 2)
+    f_game = SqrtOneXSquaredFenchel()
+    f_opt = SqrtOneXSquared()
     
     T = 10
     d = 1
 
     alpha_t = np.linspace(1, T, T)
 
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
+    XBOUNDS = [[-1, 1]]
+    YBOUNDS = [[-1, 1]]
 
-    X_INIT = np.array([0.4])
-    Y_INIT = np.array([0.4])
+    X_INIT = np.array([1.0])
+    Y_INIT = np.array([1])
 
     # ---------------------------- RUN FENCHEL GAME ----------------------------
 
     bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([0.4]))
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]))
+
+    ftrl = FTRL(f = f_game, d=d, weights=alpha_t, eta=0, z0=0)
 
     m_game = Fenchel_Game(f = f_game, xbounds = XBOUNDS, ybounds = YBOUNDS, iterations = T, weights = alpha_t, d = d)
-    m_game.set_players(x_alg = bestresp, y_alg = ftl)
+    m_game.set_players(x_alg = ftrl, y_alg = ftl)
     
     m_game.run()
     
@@ -48,22 +52,19 @@ def FW_Recovery():
 
     # ---------------------- RUN FRANK-WOLFE OPTIMIZATION ----------------------
 
-    xbounds = [-10,10]
+    xbounds = [-1,1]
     
     #x_t = np.array([10,-10])
-    x_t = np.array([0.4])
     #print(x_t)
 
-    x_ts = FrankeWolfeLoop(T, xbounds, f_opt, X_INIT)
+    x_ts = heavyBall(f_opt, T, X_INIT, L=1) #(f_opt, T, X_INIT, xbounds)
 
     plt.figure()
     plt.title("Frank-Wolfe <--> X: BestResp+, Y: FTL")
-    plt.plot(x_ts, '-r', label = "FW")
+    plt.plot(x_ts[1:], '-r', label = "FW")
     plt.plot(m_game.xbar, '--b', label = "BR + FTL")
     plt.legend()
     plt.show()
-
-
 
 
 

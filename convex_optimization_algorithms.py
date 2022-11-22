@@ -19,10 +19,10 @@ def gradDescentAveraging(f, T, w_0, L=2): # ASSUMING SMOOTH
 def cumulativeGradientDescent(f, T, w_0, R, G):
     eta = (R/G)/math.sqrt(T)
     w_ts = []
-    grad_sum = f.grad(w_0)
     w_ts.append(w_0)
+    grad_sum = f.grad(w_0)
     for t in range(1,T):
-        w_t = (1-(1/t)) + (1/t)*eta*grad_sum
+        w_t = (1-(1/t))*w_ts[-1] - (1/t)*eta*grad_sum
         w_ts.append(w_t)
         grad_sum += f.grad(w_t)
     return w_ts
@@ -32,7 +32,7 @@ def frankWolfe(f, T, w_0, xbounds):
     w_ts = []
     w_ts.append(w_0)
     for t in range(0,T): 
-        s_t = f.find_s(w_ts[-1], xbounds)
+        s_t = find_s(f.grad(w_ts[-1]), xbounds)
         w_t = w_ts[-1] + (2/(t+2))*(s_t-w_ts[-1])
         w_ts.append(w_t)
     return w_ts
@@ -133,14 +133,14 @@ if __name__ == "__main__":
     # Franke-Wolfe Training loop
     T = 100
     xbounds = [-10,10]
-    f = PowerFunction(2,2)
+    f = SqrtOneXSquared()
 
     x_0 = np.array([5], dtype='float64')
     print(x_0)
 
     x_ts_FW = frankWolfe(f, T, x_0, xbounds)
-    x_ts_GDAvg = gradDescentAveraging(f, T, x_0, L=5) 
-    x_ts_cumulativeGD = cumulativeGradientDescent(f, T, x_0, R=10, G=10)
+    x_ts_GDAvg = gradDescentAveraging(f, T, x_0, L=1) 
+    x_ts_cumulativeGD = cumulativeGradientDescent(f, T, x_0, R=10, G=1)
     x_ts_NAG = NAG(f, T, x_0, L=2)
     x_ts_heavyball = heavyBall(f, T, x_0, L=2)
 

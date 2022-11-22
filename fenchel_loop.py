@@ -247,8 +247,6 @@ if __name__ == "__main__":
 
     # Return saddle point guess - use to find min f(x)
 
-        
-
 
     # Pair up "fair players" FTL & OMD
 
