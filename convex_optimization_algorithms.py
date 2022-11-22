@@ -158,6 +158,7 @@ if __name__ == "__main__":
     plt.plot(x_ts_cumulativeGD, color='green', label="CumulativeGradientDescent")
     plt.plot(x_ts_NAG, color='purple', label="NAG")
     plt.plot(x_ts_heavyball, color='orange', label="HeavyBall")
+    
     plt.title("Convex Optimization Algorithms")
     plt.legend()
     plt.show()
