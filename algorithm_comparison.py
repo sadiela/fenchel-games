@@ -33,8 +33,6 @@ def FW_Recovery():
     # ---------------------------- RUN FENCHEL GAME ----------------------------
 
     ftrl = FTRL(f = f_game, d=d, weights=alpha_t, eta=0, z0=0)
-
-    
     
     # --------------------------------------------------------------------------
 
@@ -56,11 +54,9 @@ def FW_Recovery():
     plt.show()
 
 
-
 if __name__ == '__main__':
 
     #print("Salve Munde")
-
     #FW_Recovery()
 
     T = 100

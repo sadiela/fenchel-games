@@ -11,6 +11,22 @@ def find_s(x_t, xbounds=(-10,10)):
 def bregmanDivergence(phi, x, y):
     return phi.f(x)-phi.f(y) - np.dot(phi.grad(y), x-y)
 
+class L2Reg:
+    def __init__(self):
+        self.name="Power Function $f(x)=1/2 ||x||^2$"
+
+    def f(self,x, t=1):
+        return (1/2)* np.pow(np.linalg.norm(x, ord=2), 2) * np.sqrt(t)
+    
+    def grad(self, x):
+        return x
+
+    def fenchel(self, theta): 
+        return (1/2) * np.power(np.linalg.norm(theta, ord = 2), 2)
+
+    def fenchel_grad(self, x):
+        return x
+
 
 #############
 # FUNCTIONS # 
