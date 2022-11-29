@@ -5,7 +5,9 @@ from fenchel_loop import *
 from convex_optimization_algorithms import *
 from ol_algorithms import *
 
-def BestResp_X_FTL_Y(f_game, f_opt, x_alg, y_alg, T, d, weights, xbounds, ybounds):
+def run_helper(f_game, f_opt, x_alg, y_alg, T, d, weights, xbounds, ybounds):
+
+    print("Running algorithms X = " + x_alg.name + ", Y = " + y_alg.name)
 
     m_game = Fenchel_Game(f = f_game, xbounds = xbounds, ybounds = ybounds, iterations = T, weights = weights, d = d)
     m_game.set_players(x_alg = x_alg, y_alg = y_alg)
@@ -24,6 +26,7 @@ def BestResp_X_FTL_Y(f_game, f_opt, x_alg, y_alg, T, d, weights, xbounds, ybound
     #m_game.plot_acl()
 
     #print(m_game.acl_x)
+
 
 def FW_Recovery():
 
@@ -60,10 +63,11 @@ if __name__ == '__main__':
 
     #FW_Recovery()
 
-    T = 10
+    T = 100
     d = 1
 
     alpha_t = np.linspace(1, T, T)
+    eta_t = np.ones(T)
 
     XBOUNDS = [[-1, 1]]
     YBOUNDS = [[-1, 1]]
@@ -77,9 +81,16 @@ if __name__ == '__main__':
     #f_opt = SqrtOneXSquared()
 
     bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
+    
     ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = YBOUNDS)
     optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = YBOUNDS)
 
-    BestResp_X_FTL_Y(f_game = f_game, f_opt = f_opt, x_alg = bestresp, y_alg = ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = XBOUNDS)
+
+    optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = XBOUNDS)
+
+    omd = OMD(f = f_game, d = 1, weights = alpha_t, eta_t = eta_t, bounds = XBOUNDS)
+
+    run_helper(f_game = f_game, f_opt = f_opt, x_alg = omd, y_alg = ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     

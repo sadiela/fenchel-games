@@ -112,16 +112,15 @@ class OFTL:
             update = (self.weighted_sum + self.alpha_t[t] * x[-1]) / np.sum(self.alpha_t[0:t+1])
             return self.f.grad(update)
 
-
 class FTRL:
 
-    def __init__(self, f, d, weights, eta, z0):
+    def __init__(self, f, d, weights, z0, bounds):
         self.name = "FTRL"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.z0 = z0
-        self.eta = eta  
+        self.bounds = bounds
         self.regularizer = r"$\frac{1}{2} \sqrt{t} ||x||^2$"
         self.weighted_sum = np.zeros(shape = (self.d))
 
@@ -133,10 +132,9 @@ class FTRL:
     #def get_update_x(self, g, t):
     #    return -np.average(g, axis = 1, weights = self.alpha_t[0:t]) * np.sum(self.alpha_t[0:t]) / np.sqrt(t)
 
-
 class OFTRL:
 
-    def __init__(self, f, d, weights, hints, z0, bounds):
+    def __init__(self, f, d, weights, z0, bounds):
         self.name = "Optimistic FTRL"
         self.f = f
         self.d = d

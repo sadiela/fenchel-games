@@ -60,6 +60,23 @@ class Fenchel_Game:
         self.algo_X = x_alg
         self.algo_Y = y_alg
 
+    def run_teams(self, yfirst = True):
+
+        for t in range(0, self.T):
+
+            if t % (self.T/10) == 0:
+                print("Updating round t = %d" % t)
+
+            # Update both Y players
+
+            # Sample from Y team according to current probability distribution
+
+            # Update both X players
+
+            # Sample from X team according to current probability distribution
+
+            # Update probability distributions and regret accordingly
+
     def run(self, yfirst = True):
         #print(self.y[-1], self.x[-1])
 
