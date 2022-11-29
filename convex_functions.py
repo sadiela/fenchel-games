@@ -72,6 +72,9 @@ class SqrtOneXSquaredFenchel:
     def fenchel(self, theta): 
         return -np.sqrt(1 - np.power(theta, 2))
 
+    def grad(self, x):
+        return x/np.sqrt(1 + np.power(x, 2))
+
     def payoff(self, x, y):
         return np.dot(x,y) - self.fenchel(y)
 
@@ -89,6 +92,9 @@ class PowerFenchel:
 
     def fenchel(self, theta): 
         return (1/2) * np.power(np.linalg.norm(theta, ord = self.q), self.q)
+
+    def grad(self, x):
+        return x
 
     def payoff(self, x, y):
         return np.dot(x, y) - self.fenchel(y)
