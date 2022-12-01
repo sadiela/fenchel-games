@@ -11,7 +11,7 @@ def projection(x, bounds):
     return x
 
 # Gradient descent with averaging (different rate depending on smooth or not)
-# (equiv to OMD + bestresp)
+# X: OMD, Y: BestResp+, alpha_t = 1
 def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
     w_ts = []
     w_ts.append(w_0)
@@ -24,6 +24,7 @@ def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
     return avg_ws
 
 # Cumulative gradient descent
+# X: OMD, Y: FTL+, alpha_t = 1
 def cumulativeGradientDescent(f, T, w_0, R, G, xbounds=[[-10,10]]):
     eta = (R/G)/math.sqrt(T)
     w_ts = []
@@ -37,6 +38,7 @@ def cumulativeGradientDescent(f, T, w_0, R, G, xbounds=[[-10,10]]):
     return w_ts
 
 # Frank-Wolfe
+# X: BestResp+, Y: FTL, alpha_t = t
 def frankWolfe(f, T, w_0, xbounds):
     w_ts = []
     w_ts.append(w_0)
@@ -47,10 +49,11 @@ def frankWolfe(f, T, w_0, xbounds):
     return w_ts
 
 # Linear rate FW 
-
+# X: BestResp+, Y: AFTL, alpha_t = 1/|| \ell(xt) ||^2
 
 # Single-call extra-gradient with averaging
 # SPECIFIC TO EXPONENTIAL FUNCTION WITH L2 NORM AS 
+# Y: BestResp+, X: Optimistic OMD, alpha_t = 1
 def singleGradientCallExtraGradientWithAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]):
     gamma = 1/L
     w_halfs = []
@@ -69,7 +72,7 @@ def singleGradientCallExtraGradientWithAveraging(f, T, w_0, L=2, xbounds=[[-10,1
     return avg_ws
 
 # Nesterov's 1-memory method PSEUDOCODE!!!
-
+# X: OMD+, Y: Optimistic FTL, alpha_t = t
 def nesterovOneMemory(f, T, w_0, phi, L=2, xbounds=[[-10,10]]):
     w_ts = []
     w_ts.append(w_0)
@@ -87,9 +90,10 @@ def nesterovOneMemory(f, T, w_0, phi, L=2, xbounds=[[-10,10]]):
         v_ts.append(projection(v_t, xbounds))
         w_t = (1-beta_t)*w_ts[-1]+ beta_t*v_ts[-1]
         w_ts.append(w_t)
-    return w_ts
+    return w_ts, v_ts
 
 # Nesterov's infinity-memory method PSEUDOCODE
+# X: FTRL+, Y: Optimistic FTL, alpha_t = t
 def nesterovInfMemory(f, T, w_0, L=8, xbounds=[[-10,10]]):
     w_ts = []
     w_ts.append(w_0)
@@ -111,6 +115,8 @@ def nesterovInfMemory(f, T, w_0, L=8, xbounds=[[-10,10]]):
 
 # Nesterov's first acceleration method
 # Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)
+# X: OMD+, Y: Optimistic FTL, alpha_t = t
+# (QUESTION) IS THIS THE SAME AS NESTEROV 1-MEMORY IF REGULARIZER IS THE SAME?
 def NAG(f, T, w_0, L=2, xbounds=[[-10,10]]):
     # NEED TO FIX
     w_ts = []
@@ -128,6 +134,7 @@ def NAG(f, T, w_0, L=2, xbounds=[[-10,10]]):
     return w_ts
 
 # Heavy Ball Method
+# X: FTRL+, Y: FTL, alpha_t = t
 def heavyBall(f, T, w_0, L=2, xbounds=[[-10,10]]):
     w_ts = [w_0, w_0]
     for t in range(1,T): 

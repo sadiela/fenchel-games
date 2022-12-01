@@ -30,17 +30,18 @@ class BestResponse: # implemented for power function only
 
 class OMD():
 
-    def __init__(self, f, d, weights, eta_t, bounds):
+    def __init__(self, f, d, weights, z0, eta_t, bounds):
         self.name = "OMD"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.eta_t = eta_t
-        self.z = np.zeros(shape = (self.d))
+        self.z = z0
         self.bounds = bounds
 
     def get_update_x(self, y, t):
-        self.z = self.z - self.eta_t[t-1] * self.alpha_t[t-1] * y[-1]
+        self.z = self.z - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        print("Before projection: ", self.z)
         return self.z
         
     #def get_update(self, x, g, t):
