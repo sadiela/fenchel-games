@@ -110,12 +110,12 @@ def nesterovInfMemory(f, T, w_0, R, L=8, xbounds=[[-10,10]]):
         z_t = (1-beta_t)*w_ts[-1] + beta_t*v_ts[-1]
         z_ts.append(z_t)
         sums -= gamma_t*f.grad(z_ts[-1])
-        v_t = R.fenchel_grad(sums)
+        v_t = R.fenchel_grad(sums, 1)
         v_t = projection(v_t, xbounds) #argmin(sum_{s=1}^t gamma_s*np.dot(f.grad(z_s), x) + R.f(x))
         v_ts.append(v_t)
         w_t = (1-beta_t)*w_ts[-1]+ beta_t*v_ts[-1]
         w_ts.append(w_t)
-    return w_ts
+    return w_ts, v_ts
 
 # Nesterov's first acceleration method
 # Unconstrained Nesterov Accelerated Gradient Descent (Algorithm 12)

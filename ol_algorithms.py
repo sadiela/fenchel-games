@@ -125,10 +125,12 @@ class FTRL:
         self.regularizer = reg #r"$\frac{1}{2} \sqrt{t} ||x||^2$"
         self.bounds = bounds
         self.weighted_sum = np.zeros(shape = (self.d))
+        #self.weighted_sum += self.z0
 
     def get_update_x(self, y, t):
-        self.weighted_sum += self.alpha_t[t-1] * y[-1]
+        self.weighted_sum += self.alpha_t[t] * y[-1]
         return self.regularizer.fenchel_grad(-self.eta * self.weighted_sum, 1)
+        #return -self.eta * self.weighted_sum 
         #return -self.weighted_sum / np.sqrt(t + 1)
 
     # Assumes R(x,t) = 1/2 sqrt(t) ||x||^2
