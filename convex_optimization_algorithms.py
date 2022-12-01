@@ -65,10 +65,10 @@ def singleGradientCallExtraGradientWithAveraging(f, T, w_0, phi, L=2, xbounds=[[
     if not alphas:
         alphas = [1 for i in range(0,T)]
     for t in range(0,T):
-        q_1 = gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
+        q_1 = -gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
         w_t = phi.fenchel_grad(q_1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_ts.append(projection(w_t, xbounds))
-        q_2 = gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
+        q_2 = -gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
         w_t_12 = phi.fenchel_grad(q_2) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_halfs.append(projection(w_t_12, xbounds))
         avg_ws.append((1/(t+1))*np.sum(w_ts))
@@ -168,9 +168,9 @@ if __name__ == "__main__":
     x_ts_cumulativeGD = cumulativeGradientDescent(f, T, x_0, R=10, G=1)
     x_ts_NAG = NAG(f, T, x_0, L=2)
     x_ts_heavyball = heavyBall(f, T, x_0, L=2)
-    x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f, T, x_0)
-    x_ts_n_onemem = nesterovOneMemory(f,T,x_0, phi=phi)
-    x_ts_n_infmem = nesterovInfMemory(f,T,x_0)
+    x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f, T, x_0, phi= phi)
+    x_ts_n_onemem, _ = nesterovOneMemory(f,T,x_0, phi=phi)
+    x_ts_n_infmem = nesterovInfMemory(f,T,x_0, R = phi)
 
     plt.plot(x_ts_FW, color='red', label="FrankWolfe")
     plt.plot(x_ts_GDAvg, color='blue', label="GradientDescentwithAveraging")
