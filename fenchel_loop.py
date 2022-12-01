@@ -60,6 +60,15 @@ class Fenchel_Game:
         self.algo_X = x_alg
         self.algo_Y = y_alg
 
+    def set_teams(self, x_team, y_team, lr = 0.5, wtx1 = (0.5, 0.75), wty1 = (0.5, 0.75)):
+        self.team_X = x_team
+        self.team_Y = y_team
+        self.lr = lr
+        self.x_dist = []
+        self.x_dist.append(wtx1[0])
+        self.y_dist = []
+        self.y_dist.append(wty1[0])
+
     def run_teams(self, yfirst = True):
 
         for t in range(0, self.T):
