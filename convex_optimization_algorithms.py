@@ -151,9 +151,9 @@ def heavyBall(f, T, w_0, L=2, xbounds=[[-10,10]]):
 
 if __name__ == "__main__":
     # Franke-Wolfe Training loop
-    T = 200
+    T = 1500
     xbounds = [-10,10]
-    f = AbsoluteValueFunction() #2,2)#PowerFunction(2,2)
+    f = ExpFunction() #2,2)#PowerFunction(2,2)
     phi = L2Reg()
 
     x_0 = np.array([5], dtype='float64')
