@@ -115,19 +115,21 @@ class OFTL:
 
 class FTRL:
 
-    def __init__(self, f, d, weights, z0, bounds):
+    def __init__(self, f, d, weights, z0, eta, reg, bounds):
         self.name = "FTRL"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.z0 = z0
+        self.eta = eta
+        self.regularizer = reg #r"$\frac{1}{2} \sqrt{t} ||x||^2$"
         self.bounds = bounds
-        self.regularizer = r"$\frac{1}{2} \sqrt{t} ||x||^2$"
         self.weighted_sum = np.zeros(shape = (self.d))
 
     def get_update_x(self, y, t):
         self.weighted_sum += self.alpha_t[t-1] * y[-1]
-        return -self.weighted_sum / np.sqrt(t + 1)
+        return self.regularizer.fenchel_grad(-self.eta * self.weighted_sum, 1)
+        #return -self.weighted_sum / np.sqrt(t + 1)
 
     # Assumes R(x,t) = 1/2 sqrt(t) ||x||^2
     #def get_update_x(self, g, t):

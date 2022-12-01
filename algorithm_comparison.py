@@ -80,7 +80,7 @@ if __name__ == '__main__':
     x_0 = np.array([5], dtype='float64')
 
     x_ts_n_onemem, v_ts = nesterovOneMemory(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1)
-    x_ts_n_infmem = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, L = 1)
+    #x_ts_n_infmem = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, L = 1)
 
     #f_game = SqrtOneXSquaredFenchel()
     #f_opt = SqrtOneXSquared()
@@ -89,7 +89,9 @@ if __name__ == '__main__':
     bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
     ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), bounds = YBOUNDS)
     optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(np.array([5.0])), bounds = YBOUNDS)
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), bounds = XBOUNDS)
+
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), eta = 0.25, reg = phi, bounds = XBOUNDS)
+
     optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = XBOUNDS)
     omd = OMD(f = f_game, d = 1, weights = alpha_t, z0 = np.array([5.0]), eta_t = eta_t, bounds = XBOUNDS)
 

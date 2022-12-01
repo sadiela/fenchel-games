@@ -88,7 +88,7 @@ def nesterovOneMemory(f, T, w_0, phi, L=2, xbounds=[[-10,10]]):
         z_t = (1-beta_t)*w_ts[-1] + beta_t*v_ts[-1]
         z_ts.append(z_t)
         q = phi.grad(v_ts[-1]) - gamma_t*f.grad(z_ts[-1])
-        v_t = phi.fenchel_grad(q)
+        v_t = phi.fenchel_grad(q, 1)
         #v_t = v_ts[-1] - gamma_t*f.grad(z_t[-1])#argmin(gamma_t*np.dot(f.grad(z_t), x) + bregmanDivergence(phi, x, v_ts[-1]))
         v_ts.append(projection(v_t, xbounds))
         w_t = (1-beta_t)*w_ts[-1]+ beta_t*v_ts[-1]

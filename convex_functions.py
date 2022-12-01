@@ -24,8 +24,8 @@ class L2Reg:
     def fenchel(self, theta): 
         return (1/2) * np.power(np.linalg.norm(theta, ord = 2), 2)
 
-    def fenchel_grad(self, x):
-        return x
+    def fenchel_grad(self, x, t):
+        return x * np.sqrt(t)
 
 
 #############
