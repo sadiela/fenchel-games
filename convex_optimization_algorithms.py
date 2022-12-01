@@ -54,7 +54,7 @@ def frankWolfe(f, T, w_0, xbounds):
 # Single-call extra-gradient with averaging
 # SPECIFIC TO EXPONENTIAL FUNCTION WITH L2 NORM AS 
 # Y: BestResp+, X: Optimistic OMD, alpha_t = 1
-def singleGradientCallExtraGradientWithAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]):
+def singleGradientCallExtraGradientWithAveraging(f, T, w_0, phi, L=2, xbounds=[[-10,10]], alphas=None):
     gamma = 1/L
     w_halfs = []
     w_halfs.append(w_0)
@@ -62,11 +62,14 @@ def singleGradientCallExtraGradientWithAveraging(f, T, w_0, L=2, xbounds=[[-10,1
     w_ts.append(w_0)
     avg_ws = []
     avg_ws.append(w_0)
-    # PSEUDOCODE
+    if not alphas:
+        alphas = [1 for i in range(0,T)]
     for t in range(0,T):
-        w_t = -gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
+        q_1 = gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
+        w_t = phi.fenchel_grad(q_1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_ts.append(projection(w_t, xbounds))
-        w_t_12 = -gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
+        q_2 = gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
+        w_t_12 = phi.fenchel_grad(q_2) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_halfs.append(projection(w_t_12, xbounds))
         avg_ws.append((1/(t+1))*np.sum(w_ts))
     return avg_ws
@@ -94,7 +97,7 @@ def nesterovOneMemory(f, T, w_0, phi, L=2, xbounds=[[-10,10]]):
 
 # Nesterov's infinity-memory method PSEUDOCODE
 # X: FTRL+, Y: Optimistic FTL, alpha_t = t
-def nesterovInfMemory(f, T, w_0, L=8, xbounds=[[-10,10]]):
+def nesterovInfMemory(f, T, w_0, R, L=8, xbounds=[[-10,10]]):
     w_ts = []
     w_ts.append(w_0)
     v_ts = []
@@ -107,8 +110,9 @@ def nesterovInfMemory(f, T, w_0, L=8, xbounds=[[-10,10]]):
         z_t = (1-beta_t)*w_ts[-1] + beta_t*v_ts[-1]
         z_ts.append(z_t)
         sums -= gamma_t*f.grad(z_ts[-1])
-        vt = projection(sums, xbounds) #argmin(sum_{s=1}^t gamma_s*np.dot(f.grad(z_s), x) + R.f(x))
-        v_ts.append(vt)
+        v_t = R.fenchel_grad(sums)
+        v_t = projection(v_t, xbounds) #argmin(sum_{s=1}^t gamma_s*np.dot(f.grad(z_s), x) + R.f(x))
+        v_ts.append(v_t)
         w_t = (1-beta_t)*w_ts[-1]+ beta_t*v_ts[-1]
         w_ts.append(w_t)
     return w_ts
