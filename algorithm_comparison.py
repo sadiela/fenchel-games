@@ -80,27 +80,27 @@ if __name__ == '__main__':
     x_0 = np.array([5], dtype='float64')
 
     x_ts_n_onemem, v_ts = nesterovOneMemory(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1)
-    x_ts_n_infmem = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, L = 1)
+    x_ts_n_infmem, v_ts = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, R = phi, L = 1)
 
     #f_game = SqrtOneXSquaredFenchel()
     #f_opt = SqrtOneXSquared()
 
+    # OL ALGORITHMS
     bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
-    
     ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), bounds = YBOUNDS)
     optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(np.array([5.0])), bounds = YBOUNDS)
 
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), bounds = XBOUNDS)
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), eta = 0.25, reg = phi, bounds = XBOUNDS)
 
     optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = XBOUNDS)
-
     omd = OMD(f = f_game, d = 1, weights = alpha_t, z0 = np.array([5.0]), eta_t = eta_t, bounds = XBOUNDS)
+
 
     game_xbar, xt = run_helper(f_game = f_game, f_opt = f_opt, x_alg = ftrl, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     plt.figure()
-    plt.plot(x_ts_n_onemem[1:], color = 'blue', label = "NesterovsOne-Memory")
-    #plt.plot(x_ts_n_infmem[1:], color = 'blue', label = "NesterovsInf-Memory")
+    #plt.plot(x_ts_n_onemem[1:], color = 'blue', label = "NesterovsOne-Memory")
+    plt.plot(x_ts_n_infmem[1:], color = 'blue', label = "NesterovsInf-Memory")
     plt.plot(game_xbar, color = 'red', linestyle = '--', label = 'FGNRD Recovery')
     #plt.plot(v_ts[1:], color = 'green', linestyle = '--', label = 'vts')
     #plt.plot(xt, color = 'purple', linestyle = '--', label = 'xt')
