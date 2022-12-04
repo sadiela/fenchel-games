@@ -96,39 +96,48 @@ class Fenchel_Game:
 
             # update y
             if yfirst: 
-                debug_print("--> Return y[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gy), t), self.T)
+                #debug_print("--> Return y[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gy), t), self.T)
                 #self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update(self.gy[:, 0:t], t+1), self.ybounds[0][0]), self.ybounds[0][1])
                 
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
-                debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
+                #debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
                 
                 # Compute the subgradients
                 #debug_print("--> Update gx[%d], using f(x, y[%d])" % (t, t), self.T)
                 #self.gx.append(self.alpha[t] * self.f.grad_x(0, self.y))
                 #debug_print("gx[%d] = %lf" % (t, self.gx[-1]), self.T)
 
-            # update x based on new y value
-            debug_print("--> Return x[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gx), t), self.T)
-            #self.x[:, t] = np.minimum(np.maximum(self.algo_X.get_update(self.gx[:, 0:t+1], t+1), self.xbounds[0][0]), self.xbounds[0][1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
-            self.x.append(projection(self.algo_X.get_update_x(self.y, t), self.xbounds))
-            #self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
-            #self.acl_x.append(np.sum(self.loss_x) / np.sum(self.alpha[0:t+1]))
+                # update x based on new y value
+                #debug_print("--> Return x[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gx), t), self.T)
+                #self.x[:, t] = np.minimum(np.maximum(self.algo_X.get_update(self.gx[:, 0:t+1], t+1), self.xbounds[0][0]), self.xbounds[0][1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
+                self.x.append(projection(self.algo_X.get_update_x(self.y, t), self.xbounds))
+                #self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
+                #self.acl_x.append(np.sum(self.loss_x) / np.sum(self.alpha[0:t+1]))
 
-            debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
-            #debug_print("lx[%d] = \u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t, t, self.loss_x[-1]), self.T)
+                #debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
+                #debug_print("lx[%d] = \u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t, t, self.loss_x[-1]), self.T)
 
-            # new gy subgradient
-            #debug_print("--> Update gy[%d], using f(x[%d], y[%d])" % (t, t, t), self.T)
-            #self.gy.append(-self.alpha[t] * self.f.grad_y(self.x[-1], self.y[-1])) # 1 - self.x[:, t]
-            #debug_print("gy[%d] = %lf" % (t+1, self.gy[-1]), self.T)
+                # new gy subgradient
+                #debug_print("--> Update gy[%d], using f(x[%d], y[%d])" % (t, t, t), self.T)
+                #self.gy.append(-self.alpha[t] * self.f.grad_y(self.x[-1], self.y[-1])) # 1 - self.x[:, t]
+                #debug_print("gy[%d] = %lf" % (t+1, self.gy[-1]), self.T)
 
-            #self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
-            #self.acl_y.append(np.sum(self.loss_y) / np.sum(self.alpha[0:t+1]))
-            #debug_print("ly[%d] = -\u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t-1, t, self.loss_y[-1]), self.T)
+                #self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+                #self.acl_y.append(np.sum(self.loss_y) / np.sum(self.alpha[0:t+1]))
+                #debug_print("ly[%d] = -\u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t-1, t, self.loss_y[-1]), self.T)
+
+            else:
+                self.x.append(projection(self.algo_X.get_update_x(self.y, t), self.xbounds))
+                debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
+                self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
+                debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
+
+                if self.algo_X.name == "OOMD":
+                    self.algo_X.update_half(self.y, t)
             
 
-            if not yfirst and t==T-1:
-                print("Finish something")
+            #if not yfirst and t==T-1:
+            #    print("Finish something")
 
         print("Fenchel game complete, T = [%d, %d, %d] rounds" % (self.T, len(self.x), len(self.y)))
 
@@ -139,9 +148,9 @@ class Fenchel_Game:
             print(sum(self.alpha[0:t]))
             weighted_sum += (self.alpha[t] * self.x[t])
             self.xbar.append(weighted_sum / np.sum(self.alpha[0:t+1]))
-
-        self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
-        self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
+        print(self.xbar)
+        #self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
+        #self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
 
     # Only plot if the data is 2D...difficult to visualize otherwise.
     def plot_trajectory_2D(self):

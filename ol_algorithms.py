@@ -30,18 +30,22 @@ class BestResponse: # implemented for power function only
 
 class OMD():
 
-    def __init__(self, f, d, weights, z0, eta_t, bounds):
+    def __init__(self, f, d, weights, z0, y0, eta_t, bounds):
         self.name = "OMD"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.eta_t = eta_t
         self.z = z0
+        self.y0 = y0
         self.bounds = bounds
 
     def get_update_x(self, y, t):
-        self.z = self.z - self.eta_t[t] * self.alpha_t[t] * y[-1]
-        print("Before projection: ", self.z)
+        if len(y) > 0:
+            self.z = self.z - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        else:
+            self.z = self.z - self.eta_t[t] * self.alpha_t[t] * self.y0
+        #print("Before projection: ", self.z)
         return self.z
         
     #def get_update(self, x, g, t):
@@ -49,8 +53,54 @@ class OMD():
 
 class OOMD():
 
-    def __init__(self, f, d, eta_t):
+    def __init__(self, f, d, weights, x0, y0, xminushalf, yminushalf, eta_t, bounds):
         self.name = "OOMD"
+        self.f = f
+        self.d = d
+        self.alpha_t = weights
+        self.eta_t = eta_t
+        self.z = x0
+        self.z_half = xminushalf
+        self.y0 = y0
+        self.yminushalf = yminushalf
+        self.bounds = bounds
+
+    def get_update_x(self, y, t):
+        
+        if t == 0:
+            self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+        else:
+            self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        return self.z
+        #if len(y) >= 2:
+        #    if t == 0:
+        #        self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+        #        self.z_half = self.z_half + self.eta_t[t] * self.alpha_t[t] * y[-1]
+        #    else:
+        #        self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-2]
+        #        self.z_half = self.z_half + self.eta_t[t] * self.alpha_t[t] * y[-1]
+        #else:
+        #if t == 0:
+        #    self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+        #    self.z_half = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+        #elif t == 1:
+        #    self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+        #    print(self.z)
+        #    self.z_half = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        #    print(self.z_half)
+        #else:
+        #    self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-2]
+        #    self.z_half = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        #print("xhalf[%d] = %lf" % (t, self.z_half))
+    
+    def update_half(self, y, t):
+        self.z_half = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+
+
+
+        
+
+    
 
 class FTL:
 
@@ -95,12 +145,14 @@ class FTL:
 
 class OFTL:
 
+    # Not sure where there is an eta here?
     def __init__(self, f, d, weights, z0, bounds):
         self.name = "OFTL"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.z0 = z0
+        #self.eta = eta
         self.weighted_sum = np.zeros(shape = (self.d))
         self.bound = bounds
 

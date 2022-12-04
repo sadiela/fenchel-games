@@ -11,16 +11,19 @@ def projection(x, bounds):
     return x
 
 # Gradient descent with averaging (different rate depending on smooth or not)
-# X: OMD, Y: BestResp+, alpha_t = 1
+# X: OMD[L2, x0, eta = 0.5*L], Y: BestResp+, alpha_t = 1
 def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
     w_ts = []
     w_ts.append(w_0)
     avg_ws = []
     eta = 1/(2*L)
+    
     for t in range(1,T): 
         #w_ts.append(w_ts[-1] - eta*f.grad(w_ts[-1]))
-        w_ts.append(projection(w_ts[-1] - eta*f.grad(w_ts[-1]), xbounds))
-        avg_ws.append((1/t)*np.sum(w_ts))
+        w_ts.append(projection(w_ts[-1] - eta*f.grad(w_ts[-1]), xbounds)) 
+
+        # I changed this to exclude the 0th iterate    
+        avg_ws.append((1/t)*np.sum(w_ts[1:]))
     return avg_ws
 
 # Cumulative gradient descent
@@ -64,14 +67,18 @@ def singleGradientCallExtraGradientWithAveraging(f, T, w_0, phi, L=2, xbounds=[[
     avg_ws.append(w_0)
     if not alphas:
         alphas = [1 for i in range(0,T)]
-    for t in range(0,T):
+
+    for t in range(1,T):
         q_1 = -gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
-        w_t = phi.fenchel_grad(q_1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
+        w_t = phi.fenchel_grad(q_1, 1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_ts.append(projection(w_t, xbounds))
+        print(w_ts[-1])
         q_2 = -gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
-        w_t_12 = phi.fenchel_grad(q_2) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
+        w_t_12 = phi.fenchel_grad(q_2, 1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_halfs.append(projection(w_t_12, xbounds))
-        avg_ws.append((1/(t+1))*np.sum(w_ts))
+        print("w[%d] = %lf, whalf[%d] = %lf" % (t, w_ts[-1], t, w_halfs[-1]))
+        avg_ws.append((1/(t))*np.sum(w_ts[1:]))
+
     return avg_ws
 
 # Nesterov's 1-memory method PSEUDOCODE!!!
