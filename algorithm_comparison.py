@@ -17,7 +17,20 @@ def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = T
     print("Saddle Point (x*, y*) = (%0.3f, %0.3f)" % (m_game.x_star, m_game.y_star))
     print("Final iterate:", m_game.x[-1], m_game.y[-1])
 
-    m_game.plot_xbar()
+    game_xbar = m_game.xbar
+
+    print(game_xbar[-1]/np.linalg.norm(game_xbar[-1]))
+
+    plt.figure()
+    #plt.plot(x_ts_n_onemem[1:], color = 'blue', label = "NesterovsOne-Memory")
+    #plt.plot(x_ts_n_infmem[1:], color = 'blue', label = "NesterovsInf-Memory")
+    plt.plot([x[0]/np.linalg.norm(x) for x in game_xbar], [x[1]/np.linalg.norm(x) for x in game_xbar], color = 'red', linestyle = '--', label = 'FGNRD Recovery')
+    plt.show()
+
+
+    #m_game.plot_xbar()
+
+
 
     #m_game.plot_trajectory_2D()
 
