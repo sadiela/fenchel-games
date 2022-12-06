@@ -96,10 +96,10 @@ if __name__ == '__main__':
     X_neg = [z[0:d] for z in Z if z[-1] == -1]
 
     t = np.linspace(-1, 1, 100)
-    plt.figure()
-    plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], color = 'b', label = "+")
-    plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], color = 'r', label = "-")
-    plt.show()
+    #plt.figure()
+    #plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], color = 'b', label = "+")
+    #plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], color = 'r', label = "-")
+    #plt.show()
 
     T = 100
     d = 2
@@ -121,26 +121,26 @@ if __name__ == '__main__':
 
     x_0 = np.array([1, 1], dtype='float64')
 
-    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), eta = 1, bounds = YBOUNDS)
+    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS)
 
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = XBOUNDS)
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, eta=1, reg=phi, bounds = XBOUNDS)
 
     optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = XBOUNDS)
 
-    omd = OMD(f = f_game, d = 1, weights = alpha_t, z0 = x_0, eta_t = eta_t, bounds = XBOUNDS)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), y0 = np.array([5.0]), eta_t = eta_t, bounds = XBOUNDS)
 
-    game_xbar, xt = run_helper(f_game = f_game, f_opt = f_opt, x_alg = omd, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
+    run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
-    print(game_xbar[-1]/np.linalg.norm(game_xbar[-1]))
+    #print(game_xbar[-1]/np.linalg.norm(game_xbar[-1]))
 
-    plt.figure()
+    #plt.figure()
     #plt.plot(x_ts_n_onemem[1:], color = 'blue', label = "NesterovsOne-Memory")
     #plt.plot(x_ts_n_infmem[1:], color = 'blue', label = "NesterovsInf-Memory")
-    plt.plot([x[0]/np.linalg.norm(x) for x in game_xbar], [x[1]/np.linalg.norm(x) for x in game_xbar], color = 'red', linestyle = '--', label = 'FGNRD Recovery')
+    #plt.plot([x[0]/np.linalg.norm(x) for x in game_xbar], [x[1]/np.linalg.norm(x) for x in game_xbar], color = 'red', linestyle = '--', label = 'FGNRD Recovery')
     #plt.plot(v_ts[1:], color = 'green', linestyle = '--', label = 'vts')
     #plt.plot(xt, color = 'purple', linestyle = '--', label = 'xt')
     #plt.plot(x_ts_n_infmem, color='gray', label="NesterovsInf-Memory")
 
-    plt.title("Algorithm Recovery")
-    plt.legend()
-    plt.show()
+    #plt.title("Algorithm Recovery")
+    #plt.legend()
+    #plt.show()
