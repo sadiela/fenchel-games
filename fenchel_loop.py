@@ -91,8 +91,8 @@ class Fenchel_Game:
 
         for t in range(0, self.T):
 
-            if t % (self.T/10) == 0:
-                print("Updating round t = %d" % t)
+            #if t % (self.T/10) == 0:
+            #    print("Updating round t = %d" % t)
 
             # update y
             if yfirst: 
@@ -132,9 +132,9 @@ class Fenchel_Game:
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
                 debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
 
-                if self.algo_X.name == "OOMD":
-                    self.algo_X.update_half(self.y, t)
-            
+            if self.algo_X.name == "Opt-OMD":
+                self.algo_X.update_half(self.y, t)
+        
 
             #if not yfirst and t==T-1:
             #    print("Finish something")
@@ -145,10 +145,8 @@ class Fenchel_Game:
         self.xbar = [weighted_sum / self.alpha[0]] 
 
         for t in range(1, self.T):
-            print(sum(self.alpha[0:t]))
             weighted_sum += (self.alpha[t] * self.x[t])
             self.xbar.append(weighted_sum / np.sum(self.alpha[0:t+1]))
-        print(self.xbar)
         #self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
         #self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
 
@@ -173,7 +171,8 @@ class Fenchel_Game:
 
         plt.figure()
         plt.plot(self.xbar, '-b', linewidth = 1.0)
-        plt.title("xbar plot")
+        plt.suptitle("X: " + self.algo_X.name + ", Y: " + self.algo_Y.name + " " + r'$\bar{x}_{t}$' + " vs. " + r'$t$')
+        plt.title(r'$\alpha_{t} = 1, T = $' + str(self.T) + ", f(x) = " + self.f.name)
         plt.xlabel("Iteration t")
         plt.ylabel("xbar")
         plt.show()

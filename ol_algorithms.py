@@ -53,8 +53,8 @@ class OMD():
 
 class OOMD():
 
-    def __init__(self, f, d, weights, x0, y0, xminushalf, yminushalf, eta_t, bounds):
-        self.name = "OOMD"
+    def __init__(self, f, d, weights, x0, y0, xminushalf, yminushalf, eta_t, bounds, yfirst):
+        self.name = "Opt-OMD"
         self.f = f
         self.d = d
         self.alpha_t = weights
@@ -62,16 +62,24 @@ class OOMD():
         self.z = x0
         self.z_half = xminushalf
         self.y0 = y0
+        self.yfirst = yfirst
         self.yminushalf = yminushalf
         self.bounds = bounds
 
     def get_update_x(self, y, t):
         
-        if t == 0:
-            self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+        if not self.yfirst:
+            if t == 0:
+                self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+            else:
+                self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+            return self.z
         else:
-            self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
-        return self.z
+            if t <= 1:
+                self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
+            else:
+                self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-2]
+            return self.z
         #if len(y) >= 2:
         #    if t == 0:
         #        self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * self.y0
@@ -147,7 +155,7 @@ class OFTL:
 
     # Not sure where there is an eta here?
     def __init__(self, f, d, weights, z0, bounds):
-        self.name = "OFTL"
+        self.name = "Opt-FTL"
         self.f = f
         self.d = d
         self.alpha_t = weights
@@ -192,7 +200,7 @@ class FTRL:
 class OFTRL:
 
     def __init__(self, f, d, weights, z0, bounds):
-        self.name = "Optimistic FTRL"
+        self.name = "Opt-FTRL"
         self.f = f
         self.d = d
         self.alpha_t = weights

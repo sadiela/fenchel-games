@@ -5,7 +5,7 @@ from fenchel_loop import *
 from convex_optimization_algorithms import *
 from ol_algorithms import *
 
-def run_helper(f_game, f_opt, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = True):
+def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = True):
 
     print("Running algorithms X = " + x_alg.name + ", Y = " + y_alg.name)
 
@@ -17,6 +17,8 @@ def run_helper(f_game, f_opt, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfi
     print("Saddle Point (x*, y*) = (%0.3f, %0.3f)" % (m_game.x_star, m_game.y_star))
     print("Final iterate:", m_game.x[-1], m_game.y[-1])
 
+    m_game.plot_xbar()
+
     #m_game.plot_trajectory_2D()
 
     #m_game.save_trajectories()
@@ -27,7 +29,7 @@ def run_helper(f_game, f_opt, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfi
 
     #print(m_game.acl_x)
 
-    return m_game.xbar, m_game.x
+    #return m_game.xbar, m_game.x
 
 def FW_Recovery():
 
@@ -60,7 +62,7 @@ if __name__ == '__main__':
     #print("Salve Munde")
     #FW_Recovery()
 
-    T = 10
+    T = 100
     d = 1
 
     #alpha_t = np.linspace(1, T, T)
@@ -81,16 +83,16 @@ if __name__ == '__main__':
     x_0 = np.array([5], dtype='float64')
 
     # alpha_t = t, eta_t = (1/4)*L
-    x_ts_n_onemem, v_ts = nesterovOneMemory(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1)  
+    #x_ts_n_onemem, v_ts = nesterovOneMemory(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1)  
 
     # alpha_t = t, eta_t = (1/4)*L
-    x_ts_n_infmem, v_ts = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, R = phi, L = 1)
+    #x_ts_n_infmem, v_ts = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, R = phi, L = 1)
 
     # alpha_t = 1, eta_t = (1/2)*L
-    x_ts_GDAvg = gradDescentAveraging(f = f_opt, T = T, w_0 = x_0, L = 1) 
+    #x_ts_GDAvg = gradDescentAveraging(f = f_opt, T = T, w_0 = x_0, L = 1) 
 
     # alpha_t = 1, eta_t = (1/2)*L
-    x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f = f_opt, T = T, w_0 = x_0, phi = phi)
+    #x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f = f_opt, T = T, w_0 = x_0, phi = phi)
 
 
     #f_game = SqrtOneXSquaredFenchel()
@@ -106,26 +108,40 @@ if __name__ == '__main__':
     optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([1.0]), bounds = XBOUNDS)
     omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), y0 = np.array([5.0]), eta_t = eta_t, bounds = XBOUNDS)
 
-    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = np.array([5.0]), xminushalf = np.array([5.0]), y0 = np.array([5.0]), yminushalf = np.array([0]), eta_t = eta_t, bounds = XBOUNDS)
+    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = np.array([5.0]), xminushalf = np.array([5.0]), y0 = np.array([5.0]), yminushalf = np.array([0]), eta_t = eta_t, bounds = XBOUNDS, yfirst = False)
 
-    game_xbar, xt = run_helper(f_game = f_game, f_opt = f_opt, x_alg = optimistic_omd, y_alg = bestresp, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
+    X_LIST = [ftrl, optimistic_ftrl, omd, optimistic_omd]
+    Y_LIST = [ftl, optimistic_ftl]
 
-    print(x_ts_sgc_eg)
-    plt.figure()
+    #run_helper(f_game = f_game, x_alg = optimistic_omd, y_alg = bestresp, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
+        
+    for x in X_LIST:
+        for y in Y_LIST:
+            print("RUNNING ALGORITHM PAIR (" + x.name + ", " + y.name + ")")
+            run_helper(f_game = f_game, x_alg = x, y_alg = y, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
+            print()
+
+    #game_xbar, xt = run_helper(f_game = f_game, f_opt = f_opt, x_alg = optimistic_omd, y_alg = bestresp, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
+
+
+
+
+    #print(x_ts_sgc_eg)
+    #plt.figure()
 
     #t_plot = np.linspace(0, T, T+1)
     #plt.plot(x_ts_n_onemem[1:], color = 'blue', label = "NesterovsOne-Memory")
     #plt.plot(x_ts_n_infmem[1:], color = 'blue', label = "NesterovsInf-Memory")
     #plt.plot(t_plot[0:len(x_ts_GDAvg)], x_ts_GDAvg[0:], color = 'blue', label = "Gradient Descent w/ Averaging")
-    plt.plot(x_ts_sgc_eg[1:], color = 'blue', label = "Single-Call Extra Gradient with Averaging")
-    plt.plot(game_xbar, color = 'red', linestyle = '--', label = 'FGNRD Recovery')
+    #plt.plot(x_ts_sgc_eg[1:], color = 'blue', label = "Single-Call Extra Gradient with Averaging")
+    #plt.plot(game_xbar, color = 'red', linestyle = '--', label = 'FGNRD Recovery')
     #plt.plot(v_ts[1:], color = 'green', linestyle = '--', label = 'vts')
     #plt.plot(xt, color = 'purple', linestyle = '--', label = 'xt')
     #plt.plot(x_ts_n_infmem, color='gray', label="NesterovsInf-Memory")
 
-    plt.title("Algorithm Recovery")
-    plt.legend()
-    plt.show()
+    #plt.title("Algorithm Recovery")
+    #plt.legend()
+    #plt.show()
 
     #print(x_ts_n_onemem)
     #print(game_xbar)
