@@ -96,9 +96,9 @@ if __name__ == '__main__':
     X_neg = [z[0:d] for z in Z if z[-1] == -1]
 
     t = np.linspace(-1, 1, 100)
-    #plt.figure()
-    #plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], color = 'b', label = "+")
-    #plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], color = 'r', label = "-")
+    plt.figure()
+    plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], color = 'b', label = "+")
+    plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], color = 'r', label = "-")
     #plt.show()
 
     T = 100
