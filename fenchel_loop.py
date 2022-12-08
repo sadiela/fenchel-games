@@ -12,7 +12,7 @@ def projection(x, bounds):
     return x
 
 def debug_print(print_str, T):
-    if T <= 100:
+    if T <= 101:
         print(print_str)
 
 class Fenchel_Game:

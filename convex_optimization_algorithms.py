@@ -30,16 +30,22 @@ def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
 # X: OMD, Y: FTL+, alpha_t = 1
 def cumulativeGradientDescent(f, T, w_0, R, G, xbounds=[[-10,10]]):
     eta = (R/G)/math.sqrt(T)
-    print("eta = %lf" % eta)
+    #print("eta = %lf" % eta)
+    
+    #print(w_0)
+
     w_ts = []
     w_ts.append(w_0)
+    #print(w_ts)
     grad_sum = f.grad(w_0)
+    #print(np.may_share_memory(w_0, grad_sum))
+    
     for t in range(1,T):
         w_t = (1-(1/t))*w_ts[-1] - (1/t)*eta*grad_sum
         #w_ts.append(w_t)
-        print(w_t)
         w_ts.append(projection(w_t, xbounds))
         grad_sum += f.grad(w_t)
+        #print(w_ts)
     return w_ts
 
 # Frank-Wolfe
@@ -51,6 +57,7 @@ def frankWolfe(f, T, w_0, xbounds):
         s_t = find_s(f.grad(w_ts[-1]), xbounds)
         w_t = w_ts[-1] + (2/(t+2))*(s_t-w_ts[-1])
         w_ts.append(w_t)
+        print(w_ts)
     return w_ts
 
 # Linear rate FW 

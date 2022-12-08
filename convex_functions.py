@@ -65,7 +65,7 @@ class PowerFunction:
         return (1/2)* np.pow(np.linalg.norm(x, ord=self.q), self.q)
     
     def grad(self, x):
-        return x
+        return np.copy(x)
 
 
 class ExpFunction:
@@ -110,7 +110,7 @@ class PowerFenchel:
         return (1/2) * np.power(np.linalg.norm(theta, ord = self.q), self.q)
 
     def grad(self, x):
-        return x
+        return np.copy(x)
 
     def payoff(self, x, y):
         return np.dot(x, y) - self.fenchel(y)

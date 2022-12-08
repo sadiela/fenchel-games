@@ -76,7 +76,7 @@ def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = T
 
 def FW_Recovery():
 
-    T = 100
+    T = 10
     d = 1
 
     alpha_t = Weights("linear", T = T)
@@ -139,8 +139,8 @@ def CGD_Recovery():
     T = 10
     d = 1
 
-    R = 10
-    G = 1
+    R = 5
+    G = 100
 
     alpha_t = Weights("ones", T = T)
     eta_t = (R / (G * np.sqrt(T))) * np.ones(T+1)
@@ -315,40 +315,40 @@ if __name__ == '__main__':
     
     # STATUS: OPERATIONAL
     # alpha_t = t
-    #FW_Recovery()
+    FW_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = (1/2)*L
-    #GDwAVG_Recovery()
+    GDwAVG_Recovery()
 
     # STATUS: CLOSE BUT NOT EXACT - NEED TO FIX PRESCIENT FLAG
     # alpha_t = 1, eta_t = R/Gsqrt(T)
-    #CGD_Recovery()
+    CGD_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = (1/2)*L
-    #SCEGwAVG_Recovery()
+    SCEGwAVG_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/2)*L
-    #Nesterov1Mem_Recovery()
+    Nesterov1Mem_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/4)*L
-    #NesterovInfMem_Recovery()
+    NesterovInfMem_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/8)*L
-    #HeavyBall_Recovery()
+    HeavyBall_Recovery()
 
     T = 100
 
-    weight_schedules = ["ones", "linear", "sqrt", "log"]
+    #weight_schedules = ["ones", "linear", "sqrt", "log"]
 
-    for wt in weight_schedules:
+    #for wt in weight_schedules:
 
-        alpha_t = Weights(name = wt, T = T)
-        alpha_t.plot_weights()
+    #    alpha_t = Weights(name = wt, T = T)
+    #    alpha_t.plot_weights()
 
 
 '''
