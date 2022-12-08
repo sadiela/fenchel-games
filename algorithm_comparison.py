@@ -139,8 +139,8 @@ def CGD_Recovery():
     T = 10
     d = 1
 
-    R = 5
-    G = 100
+    R = 10
+    G = 1
 
     alpha_t = Weights("ones", T = T)
     eta_t = (R / (G * np.sqrt(T))) * np.ones(T+1)
@@ -151,19 +151,19 @@ def CGD_Recovery():
     f_game = PowerFenchel(p = 2, q = 2) #ExpFenchel()
     f_opt = PowerFunction(p = 2, q = 2)
 
-    x_0 = np.array([5], dtype='float64')
+    x_0 = np.array([-5], dtype='float64')
+    z0ftl = np.array([-5], dtype='float64') # f_opt.grad(x_0)
 
-    x_ts_cumulativeGD = cumulativeGradientDescent(f = f_opt, T = T, w_0 = x_0, R = R, G = G)
+    x_ts_cumulativeGD = cumulativeGradientDescent(f = f_opt, T = T, w_0 = x_0, R = R, G = G) 
 
     omd = OMD(f = f_game, d = d, weights = alpha_t.weights, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t.weights, z0 = f_opt.grad(x_0), bounds = YBOUNDS, prescient = True)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t.weights, z0 = z0ftl, bounds = YBOUNDS, prescient = True)
 
     game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t.weights, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
            
     print(x_ts_cumulativeGD)
     print(game_xbar)
 
-        
     plt.figure()
     plt.title("Algorithm Recovery: Cumulative Gradient Descent <--> X: OMD, Y: FTL+")
     plt.plot(x_ts_cumulativeGD[1:], color = 'blue', linewidth = 1.5, label = "CGD")
@@ -315,11 +315,11 @@ if __name__ == '__main__':
     
     # STATUS: OPERATIONAL
     # alpha_t = t
-    FW_Recovery()
+    #FW_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = (1/2)*L
-    GDwAVG_Recovery()
+    #GDwAVG_Recovery()
 
     # STATUS: CLOSE BUT NOT EXACT - NEED TO FIX PRESCIENT FLAG
     # alpha_t = 1, eta_t = R/Gsqrt(T)
@@ -327,19 +327,19 @@ if __name__ == '__main__':
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = (1/2)*L
-    SCEGwAVG_Recovery()
+    #SCEGwAVG_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/2)*L
-    Nesterov1Mem_Recovery()
+    #Nesterov1Mem_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/4)*L
-    NesterovInfMem_Recovery()
+    #NesterovInfMem_Recovery()
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/8)*L
-    HeavyBall_Recovery()
+    #HeavyBall_Recovery()
 
     T = 100
 

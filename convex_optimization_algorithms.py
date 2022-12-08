@@ -26,26 +26,23 @@ def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
         avg_ws.append((1/t)*np.sum(w_ts[1:]))
     return avg_ws
 
-# Cumulative gradient descent
+# Cumulative gradient descent BOUNDED CASE
 # X: OMD, Y: FTL+, alpha_t = 1
+# cumulativeGradientDescent(f = f_opt, T = T, w_0 = x_0, R = R, G = G)
 def cumulativeGradientDescent(f, T, w_0, R, G, xbounds=[[-10,10]]):
     eta = (R/G)/math.sqrt(T)
     #print("eta = %lf" % eta)
-    
-    #print(w_0)
 
     w_ts = []
+    x_ts = []
     w_ts.append(w_0)
-    #print(w_ts)
-    grad_sum = f.grad(w_0)
-    #print(np.may_share_memory(w_0, grad_sum))
+    x_ts.append(w_0)
     
     for t in range(1,T):
-        w_t = (1-(1/t))*w_ts[-1] - (1/t)*eta*grad_sum
-        #w_ts.append(w_t)
+        x_t = projection(x_ts[-1] + eta*f.grad(w_ts[-1]), xbounds)
+        x_ts.append(x_t)
+        w_t = (1-(1/t))*w_ts[-1] - (1/t)*x_t
         w_ts.append(projection(w_t, xbounds))
-        grad_sum += f.grad(w_t)
-        #print(w_ts)
     return w_ts
 
 # Frank-Wolfe
