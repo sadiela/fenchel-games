@@ -7,11 +7,12 @@ import numpy as np
 class BestResponse: # implemented for power function only 
 
     # Might need some projections here...This is also very messy, need to be careful about who is actually running BestResp
-    def __init__(self, f, d, weights, xbounds, ybounds):
+    def __init__(self, f, d, z0, weights, xbounds, ybounds):
         self.name = "BestResp"
         self.f = f   
         self.d = d   
         self.alpha_t = weights
+        self.z0 = z0
         self.xbounds = xbounds
         self.ybounds = ybounds
 
@@ -30,21 +31,32 @@ class BestResponse: # implemented for power function only
 
 class OMD():
 
-    def __init__(self, f, d, weights, z0, y0, eta_t, bounds):
+    def __init__(self, f, d, weights, z0, y0, eta_t, bounds, prescient = False):
         self.name = "OMD"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.eta_t = eta_t
+        self.z0 = z0
         self.z = z0
         self.y0 = y0
         self.bounds = bounds
+        self.prescient = prescient
 
     def get_update_x(self, y, t):
-        if len(y) > 0:
-            self.z = self.z - self.eta_t[t] * self.alpha_t[t] * y[-1]
-        else:
-            self.z = self.z - self.eta_t[t] * self.alpha_t[t] * self.y0
+
+        if t == 1 and not self.prescient:
+            self.z = self.z = self.eta_t[t] * self.alpha_t[t] * self.y0
+        elif self.prescient:
+            #print("Start t = %d, z = %lf:" % (t, self.z))
+            self.z = self.z - (self.eta_t[t] * self.alpha_t[t] * y[-1])
+            #print("%f %lf %f" % (self.eta_t[t], self.alpha_t[t], y[-1]))
+            #print(self.eta_t[t] * self.alpha_t[t] * y[-1])
+
+        #if len(y) > 0:
+        #    self.z = self.z - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        #else:
+        #    self.z = self.z - self.eta_t[t] * self.alpha_t[t] * self.y0
         #print("Before projection: ", self.z)
         return self.z
         
@@ -59,6 +71,7 @@ class OOMD():
         self.d = d
         self.alpha_t = weights
         self.eta_t = eta_t
+        self.z0 = x0
         self.z = x0
         self.z_half = xminushalf
         self.y0 = y0
@@ -112,7 +125,7 @@ class OOMD():
 
 class FTL:
 
-    def __init__(self, f, d, weights, z0, bounds):
+    def __init__(self, f, d, weights, z0, bounds, prescient = False):
         self.name = "FTL"
         self.f = f
         self.d = d
@@ -120,17 +133,21 @@ class FTL:
         self.z0 = z0
         self.weighted_sum = np.zeros(shape = (self.d))
         self.bounds = bounds
+        self.prescient = prescient
 
     def get_update_y(self, x, t):
 
-        if t == 0:
+        if t == 1 and not self.prescient:
             #self.weighted_sum += self.alpha_t[t] * self.z0
             return self.z0
-        else:
+        elif not self.prescient:
             self.weighted_sum += self.alpha_t[t-1] * x[-1]
-            update = self.weighted_sum / np.sum(self.alpha_t[0 : t])
-
+            update = self.weighted_sum / np.sum(self.alpha_t[1 : t])
             return self.f.grad(update)
+            #self.weighted_sum += self.alpha_t[t-1] * x[-1]
+            #update = self.weighted_sum / np.sum(self.alpha_t[0 : t])
+
+            #return self.f.grad(update)
 
             #weighted_sum = np.zeros(shape = (self.d))
             #return self.f.grad(update)
@@ -166,16 +183,16 @@ class OFTL:
 
     def get_update_y(self, x, t):
 
-        if t == 0:
+        if t == 1:
             return self.z0
         else:
             self.weighted_sum += self.alpha_t[t-1] * x[-1]
-            update = (self.weighted_sum + self.alpha_t[t] * x[-1]) / np.sum(self.alpha_t[0:t+1])
+            update = (self.weighted_sum + self.alpha_t[t] * x[-1]) / np.sum(self.alpha_t[1:t+1])
             return self.f.grad(update)
 
 class FTRL:
 
-    def __init__(self, f, d, weights, z0, eta, reg, bounds):
+    def __init__(self, f, d, weights, z0, eta, reg, bounds, prescient = False):
         self.name = "FTRL"
         self.f = f
         self.d = d
@@ -186,10 +203,12 @@ class FTRL:
         self.bounds = bounds
         self.weighted_sum = np.zeros(shape = (self.d))
         #self.weighted_sum += self.z0
+        self.prescient = prescient
 
     def get_update_x(self, y, t):
-        self.weighted_sum += self.alpha_t[t] * y[-1]
-        return self.regularizer.fenchel_grad(-self.eta * self.weighted_sum, 1)
+        if self.prescient:
+            self.weighted_sum += self.alpha_t[t] * y[-1]
+            return self.regularizer.fenchel_grad(-self.eta * self.weighted_sum, 1)
         #return -self.eta * self.weighted_sum 
         #return -self.weighted_sum / np.sqrt(t + 1)
 

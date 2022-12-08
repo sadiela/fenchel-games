@@ -40,8 +40,8 @@ class Fenchel_Game:
         #self.loss_x = [(self.alpha[0] * self.f.payoff(self.x[0], self.y[0]))]
         #self.loss_y = [(self.alpha[0] * -self.f.payoff(self.x[0], self.y[0]))]
 
-        self.loss_x = []
-        self.loss_y = []
+        self.loss_x = [0]
+        self.loss_y = [0]
 
         # Update gradients
         #self.gx = [self.f.grad_x(self.x[0], self.y[0])] #np.zeros(shape = (self.d, self.T+1), dtype = float)
@@ -59,6 +59,9 @@ class Fenchel_Game:
     def set_players(self, x_alg, y_alg):
         self.algo_X = x_alg
         self.algo_Y = y_alg
+
+        self.x.append(self.algo_X.z0)
+        self.y.append(self.algo_Y.z0)
 
     def set_teams(self, x_team, y_team, lr = 0.5, wtx1 = (0.5, 0.75), wty1 = (0.5, 0.75)):
         self.team_X = x_team
@@ -89,7 +92,7 @@ class Fenchel_Game:
     def run(self, yfirst = True):
         #print(self.y[-1], self.x[-1])
 
-        for t in range(0, self.T):
+        for t in range(1, self.T):
 
             #if t % (self.T/10) == 0:
             #    print("Updating round t = %d" % t)
@@ -100,7 +103,7 @@ class Fenchel_Game:
                 #self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update(self.gy[:, 0:t], t+1), self.ybounds[0][0]), self.ybounds[0][1])
                 
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
-                #debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
+                debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
                 
                 # Compute the subgradients
                 #debug_print("--> Update gx[%d], using f(x, y[%d])" % (t, t), self.T)
@@ -111,10 +114,10 @@ class Fenchel_Game:
                 #debug_print("--> Return x[%d], computing with N = %d gradients from t = 0 to t = %d" % (t, len(self.gx), t), self.T)
                 #self.x[:, t] = np.minimum(np.maximum(self.algo_X.get_update(self.gx[:, 0:t+1], t+1), self.xbounds[0][0]), self.xbounds[0][1]) # WILL HAVE TO CHANGE FOR LARGER DIMS
                 self.x.append(projection(self.algo_X.get_update_x(self.y, t), self.xbounds))
-                #self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
+                
                 #self.acl_x.append(np.sum(self.loss_x) / np.sum(self.alpha[0:t+1]))
 
-                #debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
+                debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
                 #debug_print("lx[%d] = \u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t, t, self.loss_x[-1]), self.T)
 
                 # new gy subgradient
@@ -122,6 +125,7 @@ class Fenchel_Game:
                 #self.gy.append(-self.alpha[t] * self.f.grad_y(self.x[-1], self.y[-1])) # 1 - self.x[:, t]
                 #debug_print("gy[%d] = %lf" % (t+1, self.gy[-1]), self.T)
 
+                #self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
                 #self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
                 #self.acl_y.append(np.sum(self.loss_y) / np.sum(self.alpha[0:t+1]))
                 #debug_print("ly[%d] = -\u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t-1, t, self.loss_y[-1]), self.T)
@@ -132,6 +136,9 @@ class Fenchel_Game:
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
                 debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
 
+            self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
+            self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+
             if self.algo_X.name == "Opt-OMD":
                 self.algo_X.update_half(self.y, t)
         
@@ -141,12 +148,14 @@ class Fenchel_Game:
 
         print("Fenchel game complete, T = [%d, %d, %d] rounds" % (self.T, len(self.x), len(self.y)))
 
-        weighted_sum = self.x[0] * self.alpha[0]
-        self.xbar = [weighted_sum / self.alpha[0]] 
+        #weighted_sum = self.x[0] * self.alpha[0]
+        #self.xbar = [weighted_sum / self.alpha[0]] 
 
+        weighted_sum = np.zeros((self.d))
+        self.xbar = [weighted_sum]
         for t in range(1, self.T):
             weighted_sum += (self.alpha[t] * self.x[t])
-            self.xbar.append(weighted_sum / np.sum(self.alpha[0:t+1]))
+            self.xbar.append(weighted_sum / np.sum(self.alpha[1:t+1]))
         #self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
         #self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
 

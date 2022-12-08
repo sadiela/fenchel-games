@@ -30,12 +30,14 @@ def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
 # X: OMD, Y: FTL+, alpha_t = 1
 def cumulativeGradientDescent(f, T, w_0, R, G, xbounds=[[-10,10]]):
     eta = (R/G)/math.sqrt(T)
+    print("eta = %lf" % eta)
     w_ts = []
     w_ts.append(w_0)
     grad_sum = f.grad(w_0)
     for t in range(1,T):
         w_t = (1-(1/t))*w_ts[-1] - (1/t)*eta*grad_sum
         #w_ts.append(w_t)
+        print(w_t)
         w_ts.append(projection(w_t, xbounds))
         grad_sum += f.grad(w_t)
     return w_ts
