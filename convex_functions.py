@@ -39,7 +39,7 @@ class SqrtOneXSquared:
         return np.sqrt(1 + np.power(x, 2))
 
     def grad(self, x):
-        gradient = x/np.sqrt(1 + np.power(x,2))
+        gradient = np.copy(x)/np.sqrt(1 + np.power(x,2))
         return gradient
 
 class AbsoluteValueFunction:

@@ -45,158 +45,134 @@ def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = T
 
     return m_game.xbar, m_game.x
 
-def FW_Recovery(f_game, f_opt):
-
-    T = 10
-    d = 1
+def FW_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     alpha_t = Weights("linear", T = T)
    
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
+    x_ts_FW = frankWolfe(f = f_opt, T = T, w_0 = x_0, xbounds = xbounds)
 
-    x_0 = np.array([5], dtype='float64')
-
-    x_ts_FW = frankWolfe(f = f_opt, T = T, w_0 = x_0, xbounds = XBOUNDS)
-
-    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS)
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds)
   
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = bestresp, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = bestresp, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
            
     plt.figure()
-    plt.title("Algorithm Recovery: Frank-Wolfe <--> X: BestResp+, Y: FTL")
+    plt.suptitle("Algorithm Recovery: Frank-Wolfe <--> X: BestResp+, Y: FTL")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_FW[1:], color = 'blue', linewidth = 1.5, label = "Frank-Wolfe")
     plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("FW_power_T_" + str(T) + ".png")
 
-def GDwAVG_Recovery(f_game, f_opt):
-
-    T = 100
-    d = 1
+def GDwAVG_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     alpha_t = Weights("ones", T = T)
     eta_t = 0.5 * np.ones(T+1)
    
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
+    x_0 = np.array([0.5], dtype = 'float64')
+    x_ts_GDAvg = gradDescentAveraging(f = f_opt, T = T, w_0 = x_0, L = 1, xbounds = xbounds) 
 
-    x_0 = np.array([5], dtype='float64')
-
-    x_ts_GDAvg = gradDescentAveraging(f = f_opt, T = T, w_0 = x_0, L = 1) 
-
-    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS)
+    x_0 = np.array([0.5], dtype = 'float64')
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = f_opt.grad(x_0), eta_t = eta_t, bounds = xbounds, prescient = False)
   
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
            
+    #print(game_xbar)
+    #print(x_ts_GDAvg)
+
     plt.figure()
-    plt.title("Algorithm Recovery: Gradient Descent w/Averaging <--> X: OMD, Y: FTL+")
+    plt.suptitle("Algorithm Recovery: Gradient Descent w/Averaging <--> X: OMD, Y: FTL+")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_GDAvg, color = 'blue', linewidth = 1.5, label = "GDw/AVG")
     plt.plot(game_xbar[1:T], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("GDAVG_power_T_" + str(T) + ".png")
 
-def CGD_Recovery(f_game, f_opt):
-
-    T = 10
-    d = 1
+def CGD_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     R = 10
     G = 1
 
     alpha_t = Weights("ones", T = T)
     eta_t = (R / (G * np.sqrt(T))) * np.ones(T+1)
-   
-    XBOUNDS = [[-1, 1]]
-    YBOUNDS = [[-1, 1]]
 
-    x_0 = np.array([1], dtype='float64')
-    z0ftl = np.array([1], dtype='float64') # f_opt.grad(x_0)
+    #x_0 = np.array([1], dtype='float64')
+    #z0ftl = np.array([1], dtype='float64') # f_opt.grad(x_0)
 
-    x_ts_cumulativeGD = cumulativeGradientDescent(f = f_opt, T = T, w_0 = x_0, R = R, G = G, xbounds = XBOUNDS) 
+    x_ts_cumulativeGD = cumulativeGradientDescent(f = f_opt, T = T, w_0 = x_0, R = R, G = G, xbounds = xbounds) 
 
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = z0ftl, bounds = YBOUNDS, prescient = True)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = ybounds, prescient = True)
 
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
            
-    print(x_ts_cumulativeGD)
-    print(game_xbar)
+    #print(x_ts_cumulativeGD)
+    #print(game_xbar)
 
     plt.figure()
-    plt.title("Algorithm Recovery: Cumulative Gradient Descent <--> X: OMD, Y: FTL+")
+    plt.suptitle("Algorithm Recovery: Cumulative Gradient Descent <--> X: OMD, Y: FTL+")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_cumulativeGD[1:], color = 'blue', linewidth = 1.5, label = "CGD")
     plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("CGD_power_T_" + str(T) + ".png")
 
-def SCEGwAVG_Recovery(f_game, f_opt):
-
-    T = 10
-    d = 1
+def SCEGwAVG_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     L = 1
 
     alpha_t = Weights("ones", T = T)
     eta_t = 0.5 * np.ones(T+1)
-   
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
 
-    x_0 = np.array([5], dtype='float64')
     phi = L2Reg()
 
-    x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f = f_opt, T = T, w_0 = x_0, phi = phi)
+    x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1, xbounds = xbounds)
 
-    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = x_0, yminushalf = x_0, eta_t = eta_t, bounds = XBOUNDS, yfirst = False)
-    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
+    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = f_opt.grad(x_0), yminushalf = f_opt.grad(x_0), eta_t = eta_t, bounds = xbounds, yfirst = False)
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
 
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = optimistic_omd, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = False)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = optimistic_omd, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
            
     plt.figure()
-    plt.title("Algorithm Recovery: Single-Call Extra-Gradient with Averaging <--> X: Opt OMD, Y: BR+")
+    plt.suptitle("Algorithm Recovery: Single-Call Extra-Gradient with Averaging <--> X: Opt OMD, Y: BR+")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_sgc_eg[1:], color = 'blue', linewidth = 1.5, label = "SCEGw/AVG")
     plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("SCEGwAVG_power_T_" + str(T) + ".png")
 
-def Nesterov1Mem_Recovery(f_game, f_opt):
-
-    T = 100
-    d = 1
+def Nesterov1Mem_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     L = 1
 
     alpha_t = Weights("linear", T = T)
-    alpha_t.print_weights()
     eta_t = 0.25 * np.ones(T+1)
    
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
-
     x_0 = np.array([5], dtype='float64')
     phi = L2Reg()
 
-    x_ts_n_onemem, _ = nesterovOneMemory(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1)  
+    x_ts_n_onemem, _ = nesterovOneMemory(f = f_opt, T = T, w_0 = x_0, phi = phi, L = 1, xbounds = xbounds)  
 
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS, prescient = True)
-    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = True)
+    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds)
 
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
            
     plt.figure()
-    plt.title("Algorithm Recovery: Nesterov's 1-Memory Method <--> X: OMD+, Y: Opt-FTL")
+    plt.suptitle("Algorithm Recovery: Nesterov's 1-Memory Method <--> X: OMD+, Y: Opt-FTL")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_n_onemem[1:], color = 'blue', linewidth = 1.5, label = "Nesterov's 1Mem")
     plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("Nesterov1_power_T_" + str(T) + ".png")
 
-def NesterovInfMem_Recovery(f_game, f_opt):
-
-    T = 100
-    d = 1
+def NesterovInfMem_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     L = 1
 
@@ -205,58 +181,53 @@ def NesterovInfMem_Recovery(f_game, f_opt):
     eta_t = 0.25 * np.ones(T+1)
     eta = 0.25
    
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
-
     x_0 = np.array([5], dtype='float64')
     phi = L2Reg()
 
-    x_ts_n_infmem, _ = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, R = phi, L = 1) 
+    x_ts_n_infmem, _ = nesterovInfMemory(f = f_opt, T = T, w_0 = x_0, R = phi, L = 1, xbounds = xbounds) 
 
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), eta = eta, reg = phi, bounds = XBOUNDS, prescient = True)
-    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS)
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), eta = eta, reg = phi, bounds = xbounds, prescient = True)
+    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds)
 
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = ftrl, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = ftrl, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
            
     plt.figure()
-    plt.title("Algorithm Recovery: Nesterov's Inf-Memory Method <--> X: FTRL+, Y: Opt-FTL")
+    plt.suptitle("Algorithm Recovery: Nesterov's Inf-Memory Method <--> X: FTRL+, Y: Opt-FTL")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_n_infmem[1:], color = 'blue', linewidth = 1.5, label = "Nesterov's 1Mem")
     plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("NesterovInf_power_T_" + str(T) + ".png")
 
-def HeavyBall_Recovery(f_game, f_opt):
+def HeavyBall_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
-    T = 10
-    d = 1
     L = 1
 
     alpha_t = Weights("linear", T = T)
     alpha_t.print_weights()
     eta_t = 0.125 * np.ones(T+1)
-   
-    XBOUNDS = [[-10, 10]]
-    YBOUNDS = [[-10, 10]]
 
-    x_0 = np.array([5], dtype='float64')
     phi = L2Reg()
 
-    x_ts_heavyball = heavyBall(f = f_opt, T = T, w_0 = x_0, L = 1) 
+    x_ts_heavyball = heavyBall(f = f_opt, T = T, w_0 = x_0, L = 1, xbounds = xbounds) 
 
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS, prescient = True)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS, prescient = False)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = True)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds, prescient = False)
   
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
            
-    print(x_ts_heavyball)
-    print(game_xbar)
+    #print(x_ts_heavyball)
+    #print(game_xbar)
         
     plt.figure()
-    plt.title("Algorithm Recovery: Heavy Ball <--> X: OMD+, Y: FTL")
+    plt.suptitle("Algorithm Recovery: Heavy Ball <--> X: OMD+, Y: FTL")
+    plt.title("T = " + str(T))
     plt.plot(x_ts_heavyball[2:], color = 'blue', linewidth = 1.5, label = "Heavy Ball")
     plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
+    plt.savefig("Heavyball_power_T_" + str(T) + ".png")
 
 def run_teams():
 
@@ -407,36 +378,45 @@ if __name__ == '__main__':
 
     #print("Salve Munde")
 
-    f_game = SqrtOneXSquaredFenchel() #ExpFenchel() #PowerFenchel(p = 2, q = 2) #ExpFenchel()
-    f_opt = SqrtOneXSquared() #ExpFunction() #PowerFunction(p = 2, q = 2)
+    f_game = PowerFenchel(p = 2, q = 2)#SqrtOneXSquaredFenchel()  #ExpFenchel()
+    f_opt = PowerFunction(p = 2, q = 2)#SqrtOneXSquared() 
     
+    
+
+    T = 100
+    d = 1
+    x_0 = np.array([0.5], dtype = 'float64')
+
+    XBOUNDS = [[-10, 10]]
+    YBOUNDS = [[-10, 10]]
+
     # STATUS: OPERATIONAL
     # alpha_t = t
-    FW_Recovery(f_game, f_opt)
+    FW_Recovery(f_game = f_game, f_opt = f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = (1/2)*L
-    #GDwAVG_Recovery(f_game, f_opt)
+    GDwAVG_Recovery(f_game, f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = R/Gsqrt(T)
-    CGD_Recovery(f_game, f_opt)
+    CGD_Recovery(f_game = f_game, f_opt = f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     # STATUS: OPERATIONAL
     # alpha_t = 1, eta_t = (1/2)*L
-    #SCEGwAVG_Recovery(f_game, f_opt)
+    SCEGwAVG_Recovery(f_game, f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/2)*L
-    #Nesterov1Mem_Recovery(f_game, f_opt)
+    Nesterov1Mem_Recovery(f_game, f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/4)*L
-    #NesterovInfMem_Recovery(f_game, f_opt)
+    NesterovInfMem_Recovery(f_game, f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     # STATUS: OPERATIONAL
     # alpha_t = t, eta_t = (1/8)*L
-    #HeavyBall_Recovery(f_game, f_opt)
+    HeavyBall_Recovery(f_game, f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     T = 100
     d = 1

@@ -4,6 +4,7 @@ from fenchel_loop import *
 from convex_optimization_algorithms import *
 from ol_algorithms import *
 from algorithm_comparison import *
+from weights import *
 
 class HingeLoss:
 
@@ -48,6 +49,9 @@ class SVM_Objective:
             ret_value += self.m_f[i].grad(w)
         ret_value += (self.eta * w)
         return ret_value
+
+    def payoff(self, x, y):
+        return 
 
 
 #n = np.asarray([np.sqrt(3), 0.5])
@@ -101,7 +105,7 @@ if __name__ == '__main__':
     plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], color = 'r', label = "-")
     #plt.show()
 
-    T = 100
+    T = 200
     d = 2
 
     alpha_t = np.linspace(1, T, T)
@@ -121,17 +125,20 @@ if __name__ == '__main__':
 
     x_0 = np.array([1, 1], dtype='float64')
 
+    alpha_t = Weights("linear", T = T)
+
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, eta = 0.25, reg = phi, bounds = XBOUNDS, prescient = False)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS, prescient = False)
+    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = x_0, yminushalf = x_0, eta_t = eta_t, bounds = XBOUNDS, yfirst = False)
+    optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, reg = phi, bounds = XBOUNDS)
+
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
     optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = YBOUNDS, prescient = True)
+        
+    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
 
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, eta=1, reg=phi, bounds = XBOUNDS)
-
-    optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = XBOUNDS)
-
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), y0 = np.array([5.0]), eta_t = eta_t, bounds = XBOUNDS)
-
-    run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS)
-
-    #print(game_xbar[-1]/np.linalg.norm(game_xbar[-1]))
+    print(game_xbar[-1]/np.linalg.norm(game_xbar[-1]))
 
     #plt.figure()
     #plt.plot(x_ts_n_onemem[1:], color = 'blue', label = "NesterovsOne-Memory")

@@ -169,8 +169,8 @@ class Fenchel_Game:
             self.y_dist.append(self.y_dist[-1] * (1 + (self.lr * delta_yt)))
 
             # But true loss is measured with respect to the points actually played
-            self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
-            self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+            self.loss_x.append((self.alpha.weights[t] * self.f.payoff(self.x[-1], self.y[-1])))
+            self.loss_y.append((self.alpha.weights[t] * -self.f.payoff(self.x[-1], self.y[-1])))
 
         print("Fenchel game complete, T = [%d, %d, %d] rounds" % (self.T, len(self.x), len(self.y)))
 
@@ -197,7 +197,7 @@ class Fenchel_Game:
                 #self.y[:, t] = np.minimum(np.maximum(self.algo_Y.get_update(self.gy[:, 0:t], t+1), self.ybounds[0][0]), self.ybounds[0][1])
                 
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
-                debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
+                #debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
                 
                 # Compute the subgradients
                 #debug_print("--> Update gx[%d], using f(x, y[%d])" % (t, t), self.T)
@@ -211,7 +211,7 @@ class Fenchel_Game:
                 
                 #self.acl_x.append(np.sum(self.loss_x) / np.sum(self.alpha[0:t+1]))
 
-                debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
+                #debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
                 #debug_print("lx[%d] = \u03B1[%d] * g(x[%d], y[%d]) = %lf" % (t, t, t, t, self.loss_x[-1]), self.T)
 
                 # new gy subgradient
@@ -226,16 +226,18 @@ class Fenchel_Game:
 
             else:
                 self.x.append(projection(self.algo_X.get_update_x(self.y, t), self.xbounds))
-                debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
+                #debug_print("x[%d] = %lf" % (t, self.x[-1]), self.T)
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
-                debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
+                #debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
 
-            #self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
-            #self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
-
+            
             if self.algo_X.name == "Opt-OMD":
                 self.algo_X.update_half(self.y, t)
         
+            self.loss_x.append((self.alpha.weights[t] * self.f.payoff(self.x[-1], self.y[-1])))
+            self.loss_y.append((self.alpha.weights[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+
+
 
             #if not yfirst and t==T-1:
             #    print("Finish something")
@@ -250,6 +252,7 @@ class Fenchel_Game:
         for t in range(1, self.T):
             weighted_sum += (self.alpha.weights[t] * self.x[t])
             self.xbar.append(weighted_sum / np.sum(self.alpha.weights[1:t+1]))
+            #print(self.xbar)
         #self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
         #self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
 

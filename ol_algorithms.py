@@ -60,7 +60,7 @@ class OMD():
         if t == 1 and not self.prescient:
             self.z = self.z - self.eta_t[t] * self.alpha_t.weights[t] * self.y0
         elif not self.prescient:
-            print("OMD update: %lf, %lf, %lf" % (self.z, self.eta_t[t], y[-1]))
+            #print("OMD update: %lf, %lf, %lf" % (self.z, self.eta_t[t], y[-1]))
             self.z = self.z - self.eta_t[t] * self.alpha_t.weights[t-1] * y[-1]
 
         if self.prescient:
@@ -170,9 +170,9 @@ class FTL:
         elif not self.prescient:
             self.weighted_sum += self.alpha_t.weights[t-1] * x[-1]
             
-            print("\u03B1[%d] = %lf, x = %lf, ws = %lf" % (t-1, self.alpha_t.weights[t-1], x[-1], self.weighted_sum))
+            #print("\u03B1[%d] = %lf, x = %lf, ws = %lf" % (t-1, self.alpha_t.weights[t-1], x[-1], self.weighted_sum))
             update = self.weighted_sum / np.sum(self.alpha_t.weights[1 : t])
-            print("--> y[%d] = %lf" % (t, self.f.grad(update)))
+            #print("--> y[%d] = %lf" % (t, self.f.grad(update)))
             return self.f.grad(update)
         else:
             self.weighted_sum += self.alpha_t.weights[t] * x[-1]

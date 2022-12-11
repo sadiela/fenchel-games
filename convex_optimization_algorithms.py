@@ -24,6 +24,7 @@ def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
 
         # I changed this to exclude the 0th iterate    
         avg_ws.append((1/t)*np.sum(w_ts[1:]))
+        print(avg_ws)
     return avg_ws
 
 # Cumulative gradient descent BOUNDED CASE
@@ -54,7 +55,7 @@ def frankWolfe(f, T, w_0, xbounds):
         s_t = find_s(f.grad(w_ts[-1]), xbounds)
         w_t = w_ts[-1] + (2/(t+2))*(s_t-w_ts[-1])
         w_ts.append(w_t)
-        print(w_ts)
+        #print(w_ts)
     return w_ts
 
 # Linear rate FW 
