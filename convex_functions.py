@@ -19,13 +19,13 @@ class L2Reg:
         return (1/2)* np.pow(np.linalg.norm(x, ord=2), 2) * np.sqrt(t)
     
     def grad(self, x):
-        return x
+        return np.copy(x)
 
     def fenchel(self, theta): 
         return (1/2) * np.power(np.linalg.norm(theta, ord = 2), 2)
 
     def fenchel_grad(self, x, t):
-        return x * np.sqrt(t)
+        return np.copy(x) * np.sqrt(t)
 
 
 #############
@@ -84,6 +84,7 @@ class ExpFunction:
 class SqrtOneXSquaredFenchel:
     def __init__(self):
         self.name = "Function: $f(x) = sqrt(1+x^2) (fenchel)" 
+        self.latex_print = r'$\sqrt{(1+x^{2})}$'
 
     def fenchel(self, theta): 
         return -np.sqrt(1 - np.power(theta, 2))
@@ -103,6 +104,7 @@ class SqrtOneXSquaredFenchel:
 class PowerFenchel:
     def __init__(self, p, q):
         self.name = "Power function (fenchel)" 
+        self.latex_print = r'$\frac{1}{2}\|\|x\|\|^{2}$'
         self.p = p
         self.q = q
 
@@ -124,12 +126,16 @@ class PowerFenchel:
 class ExpFenchel:
     def __init__(self):
         self.name = "Exponential function"
+        self.latex_print = r'$\exp{(x)}$'
 
     def fenchel(self,theta): 
         if theta == 0: 
             return 0
         if theta > 0:
             return theta* np.log(theta) - theta
+
+    def grad(self, x):
+        return np.exp(x)
 
     def payoff(self, x,y):
         return np.dot(x,y) - self.fenchel(y)

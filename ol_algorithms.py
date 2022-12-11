@@ -1,4 +1,5 @@
 import numpy as np 
+from weights import *
 
 #### NO REGRET ALGORITHMS ####
 
@@ -8,7 +9,7 @@ class BestResponse: # implemented for power function only
 
     # Might need some projections here...This is also very messy, need to be careful about who is actually running BestResp
     def __init__(self, f, d, z0, weights, xbounds, ybounds):
-        self.name = "BestResp"
+        self.name = "BestResp+"
         self.f = f   
         self.d = d   
         self.alpha_t = weights
@@ -22,12 +23,15 @@ class BestResponse: # implemented for power function only
     def get_update_x(self, y, t):
         x_ret = np.ones(shape = (self.d))
         for i in range(0, self.d):
-            x_ret[i] = self.alpha_t[t] * max(abs(self.xbounds[i][0]), abs(self.xbounds[i][1])) * -1 * np.sign(y[-1][i])
+            x_ret[i] = self.alpha_t.weights[t] * max(abs(self.xbounds[i][0]), abs(self.xbounds[i][1])) * -1 * np.sign(y[-1][i])
 
         return x_ret
 
     def get_update_y(self, x, t):
-        return self.alpha_t[t] * self.f.grad(x[-1])
+        return self.alpha_t.weights[t] * self.f.grad(x[-1])
+
+    def reset(self):
+        pass
 
 class OMD():
 
@@ -54,13 +58,13 @@ class OMD():
             #print("Start t = %d, z = %lf:" % (t, self.z))
     
         if t == 1 and not self.prescient:
-            self.z = self.z - self.eta_t[t] * self.alpha_t[t] * self.y0
+            self.z = self.z - self.eta_t[t] * self.alpha_t.weights[t] * self.y0
         elif not self.prescient:
             print("OMD update: %lf, %lf, %lf" % (self.z, self.eta_t[t], y[-1]))
-            self.z = self.z - self.eta_t[t] * self.alpha_t[t-1] * y[-1]
+            self.z = self.z - self.eta_t[t] * self.alpha_t.weights[t-1] * y[-1]
 
         if self.prescient:
-            self.z = self.z - (self.eta_t[t] * self.alpha_t[t] * y[-1])
+            self.z = self.z - (self.eta_t[t] * self.alpha_t.weights[t] * y[-1])
 
             #print("%f %lf %f" % (self.eta_t[t], self.alpha_t[t], y[-1]))
             #print(self.eta_t[t] * self.alpha_t[t] * y[-1])
@@ -72,6 +76,9 @@ class OMD():
         #print("Before projection: ", self.z)
         return self.z
         
+    def reset(self):
+        self.z = self.z0
+    
     #def get_update(self, x, g, t):
     #    return x- self.eta_t[t] * g
 
@@ -85,6 +92,7 @@ class OOMD():
         self.eta_t = eta_t
         self.z0 = x0
         self.z = x0
+        self.z_half0 = xminushalf
         self.z_half = xminushalf
         self.y0 = y0
         self.yfirst = yfirst
@@ -93,7 +101,7 @@ class OOMD():
 
     def get_update_x(self, y, t):
         
-        self.z = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        self.z = self.z_half - self.eta_t[t] * self.alpha_t.weights[t] * y[-1]
         return self.z
 
         '''if not self.yfirst:
@@ -130,10 +138,11 @@ class OOMD():
         #print("xhalf[%d] = %lf" % (t, self.z_half))
     
     def update_half(self, y, t):
-        self.z_half = self.z_half - self.eta_t[t] * self.alpha_t[t] * y[-1]
+        self.z_half = self.z_half - self.eta_t[t] * self.alpha_t.weights[t] * y[-1]
 
-
-
+    def reset(self):
+        self.z = self.z0
+        self.z_half = self.z_half0
         
 
     
@@ -159,13 +168,16 @@ class FTL:
             #self.weighted_sum += self.alpha_t[t] * self.z0
             return self.z0
         elif not self.prescient:
-            self.weighted_sum += self.alpha_t[t-1] * x[-1]
-            update = self.weighted_sum / np.sum(self.alpha_t[1 : t])
+            self.weighted_sum += self.alpha_t.weights[t-1] * x[-1]
+            
+            print("\u03B1[%d] = %lf, x = %lf, ws = %lf" % (t-1, self.alpha_t.weights[t-1], x[-1], self.weighted_sum))
+            update = self.weighted_sum / np.sum(self.alpha_t.weights[1 : t])
+            print("--> y[%d] = %lf" % (t, self.f.grad(update)))
             return self.f.grad(update)
         else:
-            self.weighted_sum += self.alpha_t[t] * x[-1]
-            print("FTL weighted sum %lf" % self.weighted_sum)
-            update = self.weighted_sum / np.sum(self.alpha_t[1 : t+1])
+            self.weighted_sum += self.alpha_t.weights[t] * x[-1]
+            #print("FTL weighted sum %lf" % self.weighted_sum)
+            update = self.weighted_sum / np.sum(self.alpha_t.weights[1 : t+1])
             return self.f.grad(update)
             #self.weighted_sum += self.alpha_t[t-1] * x[-1]
             #update = self.weighted_sum / np.sum(self.alpha_t[0 : t])
@@ -191,6 +203,9 @@ class FTL:
             #return update * np.sqrt(1.0 / (1 + np.power(update, 2)))
             #return np.sqrt(weighted_sum / (sum(self.alpha_t[0:t]) * (1 + weighted_sum / (sum(self.alpha_t[0:t])))))
 
+    def reset(self):
+        self.weighted_sum = np.zeros(shape = (self.d))
+
 class OFTL:
 
     # Not sure where there is an eta here?
@@ -209,9 +224,12 @@ class OFTL:
         if t == 1:
             return self.f.grad(x[-1])
         else:
-            self.weighted_sum += self.alpha_t[t-1] * x[-1]
-            update = (self.weighted_sum + self.alpha_t[t] * x[-1]) / np.sum(self.alpha_t[1:t+1])
+            self.weighted_sum += self.alpha_t.weights[t-1] * x[-1]
+            update = (self.weighted_sum + self.alpha_t.weights[t] * x[-1]) / np.sum(self.alpha_t.weights[1:t+1])
             return self.f.grad(update)
+
+    def reset(self):
+        self.weighted_sum = np.zeros(shape = (self.d))
 
 class FTRL:
 
@@ -234,15 +252,18 @@ class FTRL:
     def get_update_x(self, y, t):
         
         if t == 1 and not self.prescient:
-            return self.regularizer.fenchel_grad(0, 1)
+            return self.regularizer.fenchel_grad(np.zeros(shape = (self.d)), 1)
         elif not self.prescient:
-            self.weighted_sum += self.alpha_t[t-1] * y[-1]
+            self.weighted_sum += self.alpha_t.weights[t-1] * y[-1]
             return self.regularizer.fenchel_grad(-self.eta * self.weighted_sum, 1)
         elif self.prescient:
-            self.weighted_sum += self.alpha_t[t] * y[-1]
+            self.weighted_sum += self.alpha_t.weights[t] * y[-1]
             return self.regularizer.fenchel_grad(-self.eta * self.weighted_sum, 1)
         #return -self.eta * self.weighted_sum 
         #return -self.weighted_sum / np.sqrt(t + 1)
+
+    def reset(self):
+        self.weighted_sum = np.zeros(shape = (self.d))
 
     # Assumes R(x,t) = 1/2 sqrt(t) ||x||^2
     #def get_update_x(self, g, t):
@@ -250,14 +271,14 @@ class FTRL:
 
 class OFTRL:
 
-    def __init__(self, f, d, weights, z0, bounds):
+    def __init__(self, f, d, weights, z0, reg, bounds):
         self.name = "Opt-FTRL"
         self.f = f
         self.d = d
         self.alpha_t = weights
         self.hints = None       # Uses hint m(t) = \ell(t-1), the previous loss
         self.z0 = z0
-        self.regularizer = r"$\frac{1}{2} \sqrt{t} ||x||^2$"
+        self.regularizer = reg #r"$\frac{1}{2} \sqrt{t} ||x||^2$"
         self.weighted_sum = np.zeros(shape = (self.d))
 
     # This is the closed form for the update of x - the x update is really easy,
@@ -267,11 +288,11 @@ class OFTRL:
     def get_update_x(self, y, t):
 
         if t == 1:
-            return self.regularizer.fenchel_grad(-self.alpha_[t] * y[-1])
+            return self.regularizer.fenchel_grad(-self.alpha_t.weights[t] * y[-1], 1)
         else:
-            self.weighted_sum += self.alpha_t[t-1] * y[-1]
-            update = -(self.weighted_sum + self.alpha_t[t] * y[-1])
-            return self.regularizer.fenchel_grad(update)
+            self.weighted_sum += self.alpha_t.weights[t-1] * y[-1]
+            update = -(self.weighted_sum + self.alpha_t.weights[t] * y[-1])
+            return self.regularizer.fenchel_grad(update, 1)
 
         #self.weighted_sum += self.alpha_t[t-1] * y[-1]
         #update = (self.weighted_sum + self.alpha_t[t] * y[-1])
@@ -299,3 +320,5 @@ class OFTRL:
 
         return weighted_sum / (np.sqrt(t) + np.sum(self.alpha_t[0:t]))
 
+    def reset(self):
+        self.weighted_sum = np.zeros(shape = (self.d))

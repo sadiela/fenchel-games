@@ -63,31 +63,125 @@ class Fenchel_Game:
         self.x.append(self.algo_X.z0)
         self.y.append(self.algo_Y.z0)
 
-    def set_teams(self, x_team, y_team, lr = 0.5, wtx1 = (0.5, 0.75), wty1 = (0.5, 0.75)):
+        print("x[0] = %lf" % self.x[0])
+        print("y[0] = %lf" % self.y[0])
+
+    def set_teams(self, x_team, y_team, lr = 0.5, w1xB = 0.5, w1yB = 0.5):
         self.team_X = x_team
         self.team_Y = y_team
         self.lr = lr
+
+        # This is just a boh value, doesn't mean anything...just used to keep the indices in line
+        self.x.append(0)
+        self.y.append(0)
+
+        self.w1xB = w1xB
         self.x_dist = []
-        self.x_dist.append(wtx1[0])
+        self.x_dist.append(1 - self.w1xB)
+        self.x_dist.append(1 - self.w1xB)
+
+        self.w1yB = w1yB
         self.y_dist = []
-        self.y_dist.append(wty1[0])
+        self.y_dist.append(1 - self.w1yB)
+        self.y_dist.append(1 - self.w1yB)
 
     def run_teams(self, yfirst = True):
 
-        for t in range(0, self.T):
+        print("Starting X Distribution... w1A = %lf" % (self.x_dist[0]))
+        print("Starting Y Distribution... w1A = %lf" % (self.y_dist[0]))
+
+        for t in range(1, self.T):
 
             if t % (self.T/10) == 0:
                 print("Updating round t = %d" % t)
 
-            # Update both Y players
-
-            # Sample from Y team according to current probability distribution
-
+            print("Round t = %d, Current X Distribution: wtA = %lf" % (t, self.x_dist[t]))
+            print("Round t = %d, Current Y Distribution: wtA = %lf" % (t, self.y_dist[t]))
             # Update both X players
 
+            xA = projection(self.team_X[0].get_update_x(self.y, t), self.xbounds)
+            xB = projection(self.team_X[1].get_update_x(self.y, t), self.xbounds)
+
+            print("--> xA = %lf, xB = %lf" % (xA, xB))
+
             # Sample from X team according to current probability distribution
+            st = self.x_dist[t] / (self.x_dist[t] + self.w1xB)
+
+            rand_num = np.random.random()
+
+            if rand_num < st:
+                xt = xA
+                print("Taking xA...")
+            else:
+                xt = xB
+                print("Taking xB...")
+            self.x.append(xt)
+
+            #xt = xA if rand_num < st else xB
+
+            # Update both Y players
+
+            yA = projection(self.team_Y[0].get_update_y(self.x, t), self.ybounds)
+            yB = projection(self.team_Y[1].get_update_y(self.x, t), self.ybounds)
+
+            print("--> yA = %lf, yB = %lf" % (yA, yB))
+
+            # Sample from Y team according to current probability distribution
+            st = self.y_dist[t] / (self.y_dist[t] + self.w1yB)
+
+            rand_num = np.random.random()
+
+            if rand_num < st:
+                yt = yA
+                print("Taking yA...")
+            else:
+                yt = yB
+                print("Taking yB...")
+            self.y.append(yt)
+
+            #yt = yA if rand_num < st else yB
+            
 
             # Update probability distributions and regret accordingly
+
+            loss_x_A = max(min(self.alpha[t] * self.f.payoff(xA, self.y[-1]), 1), 0)
+            loss_x_B = max(min(self.alpha[t] * self.f.payoff(xB, self.y[-1]), 1), 0)
+
+            print("loss xA = %lf, loss xB = %lf" % (loss_x_A, loss_x_B))
+
+            delta_xt = loss_x_B - loss_x_A
+
+            print("delta x[%d] = %lf" % (t, delta_xt))
+
+            # Update probability distribution based on difference between losses
+            self.x_dist.append(self.x_dist[-1] * (1 + (self.lr * delta_xt)))
+
+            loss_y_A = max(min(self.alpha[t] * -self.f.payoff(self.x[-1], yA), 1), 0)
+            loss_y_B = max(min(self.alpha[t] * -self.f.payoff(self.x[-1], yB), 1), 0)
+
+            print("loss yA = %lf, loss yB = %lf" % (loss_y_A, loss_y_B))
+
+            delta_yt = loss_y_B - loss_y_A
+
+            print("delta y[%d] = %lf" % (t, delta_yt))
+
+            # Update probability distribution based on difference between losses
+            self.y_dist.append(self.y_dist[-1] * (1 + (self.lr * delta_yt)))
+
+            # But true loss is measured with respect to the points actually played
+            self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
+            self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+
+        print("Fenchel game complete, T = [%d, %d, %d] rounds" % (self.T, len(self.x), len(self.y)))
+
+        #weighted_sum = self.x[0] * self.alpha[0]
+        #self.xbar = [weighted_sum / self.alpha[0]] 
+
+        weighted_sum = np.zeros((self.d))
+        self.xbar = [weighted_sum]
+        for t in range(1, self.T):
+            weighted_sum += (self.alpha[t] * self.x[t])
+            self.xbar.append(weighted_sum / np.sum(self.alpha[1:t+1]))
 
     def run(self, yfirst = True):
         #print(self.y[-1], self.x[-1])
@@ -136,8 +230,8 @@ class Fenchel_Game:
                 self.y.append(projection(self.algo_Y.get_update_y(self.x, t), self.ybounds))
                 debug_print("y[%d] = %lf" % (t, self.y[-1]), self.T)
 
-            self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
-            self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+            #self.loss_x.append((self.alpha[t] * self.f.payoff(self.x[-1], self.y[-1])))
+            #self.loss_y.append((self.alpha[t] * -self.f.payoff(self.x[-1], self.y[-1])))
 
             if self.algo_X.name == "Opt-OMD":
                 self.algo_X.update_half(self.y, t)
@@ -154,8 +248,8 @@ class Fenchel_Game:
         weighted_sum = np.zeros((self.d))
         self.xbar = [weighted_sum]
         for t in range(1, self.T):
-            weighted_sum += (self.alpha[t] * self.x[t])
-            self.xbar.append(weighted_sum / np.sum(self.alpha[1:t+1]))
+            weighted_sum += (self.alpha.weights[t] * self.x[t])
+            self.xbar.append(weighted_sum / np.sum(self.alpha.weights[1:t+1]))
         #self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
         #self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
 
