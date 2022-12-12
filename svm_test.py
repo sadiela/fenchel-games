@@ -186,7 +186,7 @@ if __name__ == '__main__':
 
         w = game_xbar[j] / np.linalg.norm(game_xbar[j])
         w_time.append(w)
-        t_time.append(i)
+        t_time.append(j)
 
         i += 1
         j += int(T/NUM_PLOTS)
@@ -196,6 +196,44 @@ if __name__ == '__main__':
 
 
 
+    t = np.linspace(-1, 1, 100)
+
+    fig, axs = plt.subplots(NUM_ROWS, NUM_COLS, sharex = True)
+    fontsize = 9
+
+    row = 0
+    col = 0
+    for x, w in enumerate(w_time):
+
+        print("row = %d, col = %d, w = (%lf, %lf)" % (row, col, w[0], w[1]))
+
+        axs[row, col].set_title("Linearly Separable Hyperplane in " + r'$\mathbb{R}^{2}$' + ", iteration t = " + str(t_time[x]) + ", " + r'$\hat{w} = $' + " [%0.2lf, %0.2lf]^T" % (w[0], w[1]), fontsize = fontsize)
+        axs[row, col].scatter([x[0] for x in X_pos], [x[1] for x in X_pos], color = 'b', label = "+")
+        axs[row, col].scatter([x[0] for x in X_neg], [x[1] for x in X_neg], color = 'r', label = "-")
+        axs[row, col].plot(t, -w[0]/w[1] * t - b/w[1], linewidth = 2.5, linestyle = '--', color = 'k', label = "w")
+        axs[row, col].set_xlim([-1, 1])
+        axs[row, col].set_ylim([-1, 1])
+        axs[row, col].legend()
+
+        col = (col + 1) % NUM_COLS
+        if col == 0:
+            row += 1
+
+    plt.show()
+
+    w_time = []
+    t_time = []
+
+    i = 1
+    j = 1
+    while i <= NUM_PLOTS:
+
+        w = game_xbar[i] / np.linalg.norm(game_xbar[i])
+        w_time.append(w)
+        t_time.append(i)
+
+        i += 1
+   
     t = np.linspace(-1, 1, 100)
 
     fig, axs = plt.subplots(NUM_ROWS, NUM_COLS, sharex = True)

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import csv as csv
 from ol_algorithms import *
 from convex_functions import *
-from algorithm_comparison import *
 
 def projection(x, bounds):
     # projection into hypercube
@@ -67,6 +66,7 @@ class Fenchel_Game:
         if self.d == 1:
             print("x[0] = %lf" % self.x[0])
             print("y[0] = %lf" % self.y[0])
+        self.teams = False
 
     def set_teams(self, x_team, y_team, lr = 0.5, w1xB = 0.5, w1yB = 0.5):
         self.team_X = x_team
@@ -86,6 +86,7 @@ class Fenchel_Game:
         self.y_dist = []
         self.y_dist.append(1 - self.w1yB)
         self.y_dist.append(1 - self.w1yB)
+        self.teams = True
 
     def run_teams(self, yfirst = True):
 
@@ -184,6 +185,10 @@ class Fenchel_Game:
         for t in range(1, self.T):
             weighted_sum += (self.alpha.weights[t] * self.x[t])
             self.xbar.append(weighted_sum / np.sum(self.alpha.weights[1:t+1]))
+
+        for t in range(1, self.T):
+            self.acl_x.append(np.sum(self.loss_x[1:t+1]) / np.sum(self.alpha.weights[1:t+1]))
+            self.acl_y.append(np.sum(self.loss_y[1:t+1]) / np.sum(self.alpha.weights[1:t+1]))
 
     def run(self, yfirst = True):
         #print(self.y[-1], self.x[-1])
@@ -310,21 +315,37 @@ class Fenchel_Game:
 
     def plot_acl(self):
 
-        print("R(T = %d, X) = %lf" % (self.T, self.acl_x[-1]))
-        print("R(T = %d, Y) = %lf" % (self.T, self.acl_y[-1]))
+        if self.teams:
+            plt.figure()
+            plt.plot(self.acl_x[1:], '-b', label = "Team X")
+            plt.plot(self.acl_y[1:], '-r', label = "Team Y")
 
-        #t_plot = np.linspace(1, self.T, self.T)
-        plt.figure()
-        plt.plot(self.acl_x[1:], '-b', label = self.algo_X.name)
-        plt.plot(self.acl_y[1:], '-r', label = self.algo_Y.name)
-
-        plt.title("Average Cumulative Loss: X: " + self.algo_X.name + ", Y: " + self.algo_Y.name)
-        plt.xlabel("Iteration t")
-        plt.ylabel("ACL")
-        plt.legend()
+            plt.suptitle("(Teams) Average Cumulative Loss: X: ()" + self.team_X[0].name + ", " + self.team_X[1].name + "), Y: (" + self.team_Y[0].name + ", " + self.team_Y[1].name + ")")
+            plt.title("T = " + str(self.T) + ", " + self.alpha.latex_print)
+            plt.xlabel("Iteration t")
+            plt.ylabel("ACL")
+            plt.legend()
 
 
-        plt.show()
+            plt.show()
+        else:
+
+            print("R(T = %d, X) = %lf" % (self.T, self.acl_x[-1]))
+            print("R(T = %d, Y) = %lf" % (self.T, self.acl_y[-1]))
+
+            #t_plot = np.linspace(1, self.T, self.T)
+            plt.figure()
+            plt.plot(self.acl_x[1:], '-b', label = self.algo_X.name)
+            plt.plot(self.acl_y[1:], '-r', label = self.algo_Y.name)
+
+            plt.suptitle("Average Cumulative Loss: X: " + self.algo_X.name + ", Y: " + self.algo_Y.name)
+            plt.title("T = " + str(self.T) + ", " + self.alpha.latex_print)
+            plt.xlabel("Iteration t")
+            plt.ylabel("ACL")
+            plt.legend()
+
+
+            plt.show()
         
 
 

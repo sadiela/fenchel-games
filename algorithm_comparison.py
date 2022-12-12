@@ -39,11 +39,12 @@ def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = T
 
     #m_game.plot_xbar()
 
-    m_game.plot_acl()
+    if f_game.name != "SVM Objective Function":
+        m_game.plot_acl()
 
     #print(m_game.acl_x)
 
-    return m_game.xbar, m_game.x
+    return m_game.xbar, m_game.x, m_game.acl_x, m_game.acl_y
 
 def FW_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
@@ -283,6 +284,8 @@ def run_teams():
     
     m_game.run_teams(yfirst = False)
 
+    m_game.plot_acl()
+
     game_xbar = m_game.xbar
     
     #print("Saddle Point (x*, y*) = (%0.3f, %0.3f)" % (m_game.x_star, m_game.y_star))
@@ -402,6 +405,9 @@ def test_suite_Y_prescient(f_game, f_opt, T, d, xbounds, ybounds, weight_schedul
 
 if __name__ == '__main__':
 
+    #run_teams()
+
+    # --------------------------------------------------------------------------
     T = 110
     alpha_t_ones = Weights("ones", T = T)
     alpha_t_lin = Weights("linear", T = T)
@@ -419,32 +425,25 @@ if __name__ == '__main__':
 
     xbounds = [[-10, 10]]
     ybounds = [[-10, 10]]
-    #ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, eta = eta, reg = phi, bounds = xbounds, prescient = False)
-    #omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
-    #optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = x_0, yminushalf = x_0, eta_t = eta_t, bounds = xbounds, yfirst = False)
-    #optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, reg = phi, bounds = xbounds)
-    #bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
-    #ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = ybounds, prescient = True)
-    #optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds)
-
+    
     omd = OMD(f = f_game, d = d, weights = alpha_t_ones, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
     ftl = FTL(f = f_game, d = d, weights = alpha_t_ones, z0 = x_0, bounds = ybounds, prescient = True)
-    alpha_ones, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_ones, xbounds = xbounds, ybounds = ybounds, yfirst = False)
+    alpha_ones, _, rtx_ones, rty_ones = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_ones, xbounds = xbounds, ybounds = ybounds, yfirst = False)
     omd.reset()
     ftl.reset()
     omd = OMD(f = f_game, d = d, weights = alpha_t_lin, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
     ftl = FTL(f = f_game, d = d, weights = alpha_t_lin, z0 = x_0, bounds = ybounds, prescient = True)
-    alpha_lin, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_lin, xbounds = xbounds, ybounds = ybounds, yfirst = False)
+    alpha_lin, _, rtx_lin, rty_lin = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_lin, xbounds = xbounds, ybounds = ybounds, yfirst = False)
     omd.reset()
     ftl.reset()
     omd = OMD(f = f_game, d = d, weights = alpha_t_sqrt, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
     ftl = FTL(f = f_game, d = d, weights = alpha_t_sqrt, z0 = x_0, bounds = ybounds, prescient = True)
-    alpha_sqrt, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_sqrt, xbounds = xbounds, ybounds = ybounds, yfirst = False)
+    alpha_sqrt, _, rtx_sqrt, rty_sqrt = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_sqrt, xbounds = xbounds, ybounds = ybounds, yfirst = False)
     omd.reset()
     ftl.reset()
     omd = OMD(f = f_game, d = d, weights = alpha_t_log, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
     ftl = FTL(f = f_game, d = d, weights = alpha_t_log, z0 = x_0, bounds = ybounds, prescient = True)
-    alpha_log, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_log, xbounds = xbounds, ybounds = ybounds, yfirst = False)
+    alpha_log, _, rtx_log, rty_log = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t_log, xbounds = xbounds, ybounds = ybounds, yfirst = False)
     omd.reset()
     ftl.reset()
 
@@ -466,23 +465,57 @@ if __name__ == '__main__':
         ax.set(xlabel='t', ylabel='Iterates')
     plt.show()
 
-    '''
-    ftrl_br, _ = run_helper(f_game = f_game, x_alg = ftrl, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
+    fig, axs = plt.subplots(2,2, sharex=True)
+    fontsize=9
+    axs[0,0].set_title("ACL: " + r"$\alpha_t=1$", fontsize=fontsize)
+    axs[0,0].plot(rtx_ones, color = 'blue', linewidth = 1.5, label = "OMD")
+    axs[0,0].plot(rty_ones, color = 'red', linewidth = 1.5, label = "FTL+")
+
+    axs[0,1].set_title("ACL: " + r"$\alpha_t=t$", fontsize=fontsize)
+    axs[0,1].plot(rtx_lin, color = 'blue', linewidth = 1.5, label = "OMD")
+    axs[0,1].plot(rty_lin, color = 'red', linewidth = 1.5, label = "FTL+")
+
+    axs[1,0].set_title("ACL: " + r"$\alpha_t=\sqrt{t}$", fontsize=fontsize)
+    axs[1,0].plot(rtx_sqrt, color = 'blue', linewidth = 1.5, label = "OMD")
+    axs[1,0].plot(rty_sqrt, color = 'red', linewidth = 1.5, label = "FTL+")
+
+    axs[1,1].set_title("ACL: " + r"$\alpha_t=\log{t}$", fontsize=fontsize)
+    axs[1,1].plot(rtx_log, color = 'blue', linewidth = 1.5, label = "OMD")
+    axs[1,1].plot(rty_log, color = 'red', linewidth = 1.5, label = "FTL+")
+
+    for ax in axs.flat:
+        ax.set(xlabel='t', ylabel='Iterates')
+    plt.show()
+
+    # --------------------------------------------------------------------------
+
+    alpha_t = Weights("linear", T = T)
+
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, eta = eta, reg = phi, bounds = xbounds, prescient = False)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
+    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = x_0, yminushalf = x_0, eta_t = eta_t, bounds = xbounds, yfirst = False)
+    optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, reg = phi, bounds = xbounds)
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = ybounds, prescient = True)
+    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds)
+
+
+    ftrl_br, _, rtx1, rty1 = run_helper(f_game = f_game, x_alg = ftrl, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
     ftrl.reset()
     bestresp.reset()
-    ftrl_ftl, _ = run_helper(f_game = f_game, x_alg = ftrl, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
+    ftrl_ftl, _, rtx2, rty2 = run_helper(f_game = f_game, x_alg = ftrl, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
     ftrl.reset()
     ftl.reset()
-    oftrl_br, _ = run_helper(f_game = f_game, x_alg = optimistic_ftrl, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
+    oftrl_br, _, rtx3, rty3 = run_helper(f_game = f_game, x_alg = optimistic_ftrl, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
     optimistic_ftrl.reset()
     bestresp.reset()
-    oftrl_ftl, _ = run_helper(f_game = f_game, x_alg = optimistic_ftrl, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
+    oftrl_ftl, _, rtx4, rty4 = run_helper(f_game = f_game, x_alg = optimistic_ftrl, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
     optimistic_ftrl.reset()
     ftl.reset()
-    omd_ftl, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
+    omd_ftl, _, rtx5, rty5 = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
     omd.reset()
     ftl.reset()
-    br_oftl, _ = run_helper(f_game = f_game, x_alg = bestresp, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
+    br_oftl, _, rtx6, rty6 = run_helper(f_game = f_game, x_alg = bestresp, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
     bestresp.reset()
     optimistic_ftl.reset()
 
@@ -513,8 +546,42 @@ if __name__ == '__main__':
     #for ax in axs.flat:
     #    ax.label_outer()
 
-    print("ABOUT TO PLOT")
-    plt.show()'''
+    plt.show()
+
+    fig, axs = plt.subplots(2,3, sharex=True)
+    fontsize=9
+    axs[0,0].set_title("(ACL) X:FTRL,Y:BR+", fontsize=fontsize)
+    axs[0,0].plot(rtx1, color = 'blue', linewidth = 1.5, label = "FTRL")
+    axs[0,0].plot(rty1, color = 'red', linewidth = 1.5, label = "BR+")
+
+    axs[0,1].set_title("(ACL) X:FTRL,Y:FTL+", fontsize=fontsize)
+    axs[0,1].plot(rtx2, color = 'blue', linewidth = 1.5, label = "FTRL")
+    axs[0,1].plot(rty2, color = 'red', linewidth = 1.5, label = "FTL+")
+
+    axs[0,2].set_title("(ACL) X:OFTRL,Y:BR+", fontsize=fontsize)
+    axs[0,2].plot(rtx3, color = 'blue', linewidth = 1.5, label = "OFTRL")
+    axs[0,2].plot(rty3, color = 'red', linewidth = 1.5, label = "BR+")
+
+    axs[1,0].set_title("(ACL) X:OFTRL,Y:FTL+", fontsize=fontsize)
+    axs[1,0].plot(rtx4, color = 'blue', linewidth = 1.5, label = "OFTRL")
+    axs[1,0].plot(rty4, color = 'red', linewidth = 1.5, label = "FTL+")
+
+    axs[1,1].set_title("(ACL) X:OMD+,Y:FTL", fontsize=fontsize)
+    axs[1,1].plot(rtx5, color = 'blue', linewidth = 1.5, label = "OMD+")
+    axs[1,1].plot(rty5, color = 'red', linewidth = 1.5, label = "FTL")
+
+    axs[1,2].set_title("(ACL) X:BR+,Y:OFTL", fontsize=fontsize)
+    axs[1,2].plot(rtx6, color = 'blue', linewidth = 1.5, label = "BR+")
+    axs[1,2].plot(rty6, color = 'red', linewidth = 1.5, label = "OFTL")
+
+    for ax in axs.flat:
+        ax.set(xlabel='t', ylabel='Iterates')
+
+    # Hide x labels and tick labels for top plots and y ticks for right plots.
+    #for ax in axs.flat:
+    #    ax.label_outer()
+
+    plt.show()
 
     '''
     T = 90
