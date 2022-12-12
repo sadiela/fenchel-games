@@ -142,7 +142,7 @@ if __name__ == '__main__':
     optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = YBOUNDS)
     ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = YBOUNDS, prescient = True)
         
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
+    game_xbar, _, _, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = optimistic_ftl, T = T, d = d, weights = alpha_t, xbounds = XBOUNDS, ybounds = YBOUNDS, yfirst = True)
 
     print(game_xbar[-1]/np.linalg.norm(game_xbar[-1]))
 
