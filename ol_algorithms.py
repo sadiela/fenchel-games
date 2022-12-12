@@ -59,6 +59,7 @@ class OMD():
     
         if t == 1 and not self.prescient:
             self.z = self.z - self.eta_t[t] * self.alpha_t.weights[t] * self.y0
+            #print(self.z)
         elif not self.prescient:
             #print("OMD update: %lf, %lf, %lf" % (self.z, self.eta_t[t], y[-1]))
             self.z = self.z - self.eta_t[t] * self.alpha_t.weights[t-1] * y[-1]

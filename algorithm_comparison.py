@@ -39,7 +39,7 @@ def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = T
 
     #m_game.plot_xbar()
 
-    #m_game.plot_acl()
+    m_game.plot_acl()
 
     #print(m_game.acl_x)
 
@@ -48,6 +48,8 @@ def run_helper(f_game, x_alg, y_alg, T, d, weights, xbounds, ybounds, yfirst = T
 def FW_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     alpha_t = Weights("linear", T = T)
+
+    x_0 = np.array([5], dtype='float64')
    
     x_ts_FW = frankWolfe(f = f_opt, T = T, w_0 = x_0, xbounds = xbounds)
 
@@ -72,11 +74,11 @@ def GDwAVG_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     alpha_t = Weights("ones", T = T)
     eta_t = 0.5 * np.ones(T+1)
+
+    x_0 = np.array([5], dtype='float64')
    
-    x_0 = np.array([0.5], dtype = 'float64')
     x_ts_GDAvg = gradDescentAveraging(f = f_opt, T = T, w_0 = x_0, L = 1, xbounds = xbounds) 
 
-    x_0 = np.array([0.5], dtype = 'float64')
     bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
     omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = f_opt.grad(x_0), eta_t = eta_t, bounds = xbounds, prescient = False)
   
@@ -102,19 +104,23 @@ def CGD_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
 
     alpha_t = Weights("ones", T = T)
     eta_t = (R / (G * np.sqrt(T))) * np.ones(T+1)
+    print(eta_t)
 
+    x_0 = np.array([5], dtype='float64')
     #x_0 = np.array([1], dtype='float64')
     #z0ftl = np.array([1], dtype='float64') # f_opt.grad(x_0)
 
     x_ts_cumulativeGD = cumulativeGradientDescent(f = f_opt, T = T, w_0 = x_0, R = R, G = G, xbounds = xbounds) 
 
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = ybounds, prescient = True)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = np.array([5], dtype='float64'), y0 = np.array([5], dtype='float64'), eta_t = eta_t, bounds = xbounds, prescient = False)
+    
+    x_0 = np.array([5], dtype='float64')
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5], dtype='float64'), bounds = ybounds, prescient = True)
 
     game_xbar, _ = run_helper(f_game = f_game, x_alg = omd, y_alg = ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
            
-    #print(x_ts_cumulativeGD)
-    #print(game_xbar)
+    print(x_ts_cumulativeGD)
+    print(game_xbar)
 
     return x_ts_cumulativeGD[1:], game_xbar[1:]
 
@@ -132,14 +138,21 @@ def SCEGwAVG_Recovery(f_game, f_opt, T, d, x_0, xbounds, ybounds):
     L = 2
 
     alpha_t = Weights("ones", T = T)
+    alpha_t.print_weights()
     eta_t = 0.5 * np.ones(T+1)
 
     phi = L2Reg()
 
     x_ts_sgc_eg = singleGradientCallExtraGradientWithAveraging(f = f_opt, T = T, w_0 = x_0, phi = phi, L = L, xbounds = xbounds)
 
-    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = f_opt.grad(x_0), yminushalf = f_opt.grad(x_0), eta_t = eta_t, bounds = xbounds, yfirst = False)
-    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
+    #optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = f_opt.grad(x_0), yminushalf = f_opt.grad(x_0), eta_t = eta_t, bounds = xbounds, yfirst = False)
+    #bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
+
+    XBOUNDS = [[-10, 10]]
+    YBOUNDS = [[-10, 10]]
+
+    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = x_0, yminushalf = x_0, eta_t = eta_t, bounds = XBOUNDS, yfirst = False)
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
     game_xbar, _ = run_helper(f_game = f_game, x_alg = optimistic_omd, y_alg = bestresp, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = False)
            
@@ -259,13 +272,13 @@ def run_teams():
     x_0 = np.array([5], dtype='float64')
     z0ftl = np.array([-5], dtype='float64') # f_opt.grad(x_0)
 
-    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t.weights, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t.weights, z0 = z0ftl, bounds = YBOUNDS, prescient = True)
+    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
+    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = z0ftl, bounds = YBOUNDS, prescient = True)
 
-    omd = OMD(f = f_game, d = d, weights = alpha_t.weights, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS)
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t.weights, z0 = np.array([5.0]), eta = eta, reg = phi, bounds = XBOUNDS, prescient = False)
+    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = XBOUNDS)
+    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = np.array([5.0]), eta = eta, reg = phi, bounds = XBOUNDS, prescient = False)
   
-    m_game = Fenchel_Game(f = f_game, xbounds = XBOUNDS, ybounds = YBOUNDS, iterations = T, weights = alpha_t.weights, d = d)
+    m_game = Fenchel_Game(f = f_game, xbounds = XBOUNDS, ybounds = YBOUNDS, iterations = T, weights = alpha_t, d = d)
     m_game.set_teams(x_team = (omd, ftrl), y_team = (ftl, bestresp), lr = 0.5, w1xB = 0.75, w1yB = 0.75)
     
     m_game.run_teams(yfirst = False)
@@ -276,8 +289,8 @@ def run_teams():
     print("Final iterate:", m_game.x[-1], m_game.y[-1])
    
     plt.figure()
-    plt.title("Playing with teams")
-    plt.plot(game_xbar[1:T], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
+    plt.title("Playing with teams: X Team: (OMD, FTRL), Y Team: (FTL+, BestResp+)")
+    plt.plot(game_xbar[1:T], color = 'blue', linewidth = 1.5, linestyle = '-', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
 
@@ -288,9 +301,11 @@ def run_teams():
         sty.append(m_game.y_dist[t] / (m_game.y_dist[t] + m_game.w1yB))
 
     plt.figure()
-    plt.title("Weights")
-    plt.plot(stx, color = 'blue', linewidth = 1.5, linestyle = '--', label = "Prob X")
-    plt.plot(sty, color = 'green', linewidth = 1.5, linestyle = '--', label = "Prob Y")
+    plt.title("Weights vs. Iteration")
+    plt.plot(stx, color = 'blue', linewidth = 1.5, linestyle = '--', label = "Prob. of Selecting X_A (OMD)")
+    plt.plot(sty, color = 'red', linewidth = 1.5, linestyle = '--', label = "Prob. of Selecting Y_A (FTL)")
+    plt.xlabel("Iteration t")
+    plt.ylabel("Probability")
     #plt.plot(m_game.x_dist[1:T], color = 'red', linewidth = 1.5, linestyle = '--', label = "FGNRD Recovery")
     plt.legend()
     plt.show()
@@ -333,7 +348,7 @@ def test_suite_X_prescient(f_game, f_opt, T, d, xbounds, ybounds, weight_schedul
                 plt.plot(game_xbar[1:], color = 'red', linewidth = 1.5, linestyle = '-', label = "FGNRD Recovery")
                 plt.legend()
                 save_str = x.name + "_" + y.name + "_" + alpha_t.name + "_" + str(T)
-                #plt.savefig("./test_results/" + save_str)
+                plt.savefig("./test_results/" + save_str)
                 plt.show()
 
                 x.reset()
@@ -388,15 +403,14 @@ def test_suite_Y_prescient(f_game, f_opt, T, d, xbounds, ybounds, weight_schedul
 if __name__ == '__main__':
 
     #print("Salve Munde")
+    #run_teams()
 
     f_game = PowerFenchel(p = 2, q = 2)#SqrtOneXSquaredFenchel()  #ExpFenchel()
     f_opt = PowerFunction(p = 2, q = 2)#SqrtOneXSquared() 
     
-    
-
     T = 90
     d = 1
-    x_0 = np.array([0.5], dtype = 'float64')
+    x_0 = np.array([5.0], dtype = 'float64')
 
     XBOUNDS = [[-10, 10]]
     YBOUNDS = [[-10, 10]]
@@ -409,7 +423,7 @@ if __name__ == '__main__':
     # alpha_t = 1, eta_t = (1/2)*L
     GDavgco, GDavgsaddle = GDwAVG_Recovery(f_game, f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
-    # STATUS: OPERATIONAL
+    # STATUS: OPERATIONAL -YOU CANNOT PICK T = 100
     # alpha_t = 1, eta_t = R/Gsqrt(T)
     CGDco, CGDsaddle = CGD_Recovery(f_game = f_game, f_opt = f_opt, T = T, d = d, x_0 = x_0, xbounds = XBOUNDS, ybounds = YBOUNDS)
 
@@ -488,7 +502,7 @@ if __name__ == '__main__':
 
     #T = 100
     #d = 1
-    #run_teams()
+    
 
     #XBOUNDS = [[-10, 10]]
     #YBOUNDS = [[-10, 10]]

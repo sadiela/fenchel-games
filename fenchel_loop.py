@@ -63,8 +63,9 @@ class Fenchel_Game:
         self.x.append(self.algo_X.z0)
         self.y.append(self.algo_Y.z0)
 
-        print("x[0] = %lf" % self.x[0])
-        print("y[0] = %lf" % self.y[0])
+        if self.d == 1:
+            print("x[0] = %lf" % self.x[0])
+            print("y[0] = %lf" % self.y[0])
 
     def set_teams(self, x_team, y_team, lr = 0.5, w1xB = 0.5, w1yB = 0.5):
         self.team_X = x_team
@@ -144,8 +145,8 @@ class Fenchel_Game:
 
             # Update probability distributions and regret accordingly
 
-            loss_x_A = max(min(self.alpha[t] * self.f.payoff(xA, self.y[-1]), 1), 0)
-            loss_x_B = max(min(self.alpha[t] * self.f.payoff(xB, self.y[-1]), 1), 0)
+            loss_x_A = max(min(self.alpha.weights[t] * self.f.payoff(xA, self.y[-1]), 1), 0)
+            loss_x_B = max(min(self.alpha.weights[t] * self.f.payoff(xB, self.y[-1]), 1), 0)
 
             print("loss xA = %lf, loss xB = %lf" % (loss_x_A, loss_x_B))
 
@@ -156,8 +157,8 @@ class Fenchel_Game:
             # Update probability distribution based on difference between losses
             self.x_dist.append(self.x_dist[-1] * (1 + (self.lr * delta_xt)))
 
-            loss_y_A = max(min(self.alpha[t] * -self.f.payoff(self.x[-1], yA), 1), 0)
-            loss_y_B = max(min(self.alpha[t] * -self.f.payoff(self.x[-1], yB), 1), 0)
+            loss_y_A = max(min(self.alpha.weights[t] * -self.f.payoff(self.x[-1], yA), 1), 0)
+            loss_y_B = max(min(self.alpha.weights[t] * -self.f.payoff(self.x[-1], yB), 1), 0)
 
             print("loss yA = %lf, loss yB = %lf" % (loss_y_A, loss_y_B))
 
@@ -180,8 +181,8 @@ class Fenchel_Game:
         weighted_sum = np.zeros((self.d))
         self.xbar = [weighted_sum]
         for t in range(1, self.T):
-            weighted_sum += (self.alpha[t] * self.x[t])
-            self.xbar.append(weighted_sum / np.sum(self.alpha[1:t+1]))
+            weighted_sum += (self.alpha.weights[t] * self.x[t])
+            self.xbar.append(weighted_sum / np.sum(self.alpha.weights[1:t+1]))
 
     def run(self, yfirst = True):
         #print(self.y[-1], self.x[-1])
@@ -234,8 +235,9 @@ class Fenchel_Game:
             if self.algo_X.name == "Opt-OMD":
                 self.algo_X.update_half(self.y, t)
         
-            self.loss_x.append((self.alpha.weights[t] * self.f.payoff(self.x[-1], self.y[-1])))
-            self.loss_y.append((self.alpha.weights[t] * -self.f.payoff(self.x[-1], self.y[-1])))
+            if self.f.name != "SVM Objective Function":
+                self.loss_x.append((self.alpha.weights[t] * self.f.payoff(self.x[-1], self.y[-1])))
+                self.loss_y.append((self.alpha.weights[t] * -self.f.payoff(self.x[-1], self.y[-1])))
 
 
 
@@ -255,6 +257,11 @@ class Fenchel_Game:
             #print(self.xbar)
         #self.x_star = np.average(np.concatenate(self.x, axis=0), weights = self.alpha, axis=0)
         #self.y_star = np.average(np.concatenate(self.y, axis=0), weights = self.alpha, axis=0)
+
+        if self.f.name != "SVM Objective Function":
+            for t in range(1, self.T):
+                self.acl_x.append(np.sum(self.loss_x[1:t+1]) / np.sum(self.alpha.weights[1:t+1]))
+                self.acl_y.append(np.sum(self.loss_y[1:t+1]) / np.sum(self.alpha.weights[1:t+1]))
 
     # Only plot if the data is 2D...difficult to visualize otherwise.
     def plot_trajectory_2D(self):
@@ -276,7 +283,7 @@ class Fenchel_Game:
             return
 
         plt.figure()
-        plt.plot(self.xbar, '-b', linewidth = 1.0)
+        plt.plot(self.xbar[1:], '-b', linewidth = 1.0)
         plt.suptitle("X: " + self.algo_X.name + ", Y: " + self.algo_Y.name + " " + r'$\bar{x}_{t}$' + " vs. " + r'$t$')
         plt.title(r'$\alpha_{t} = 1, T = $' + str(self.T) + ", f(x) = " + self.f.name)
         plt.xlabel("Iteration t")
@@ -307,8 +314,8 @@ class Fenchel_Game:
 
         #t_plot = np.linspace(1, self.T, self.T)
         plt.figure()
-        plt.plot(self.acl_x, '-b', label = self.algo_X.name)
-        plt.plot(self.acl_y, '-r', label = self.algo_Y.name)
+        plt.plot(self.acl_x[1:], '-b', label = self.algo_X.name)
+        plt.plot(self.acl_y[1:], '-r', label = self.algo_Y.name)
 
         plt.title("Average Cumulative Loss: X: " + self.algo_X.name + ", Y: " + self.algo_Y.name)
         plt.xlabel("Iteration t")

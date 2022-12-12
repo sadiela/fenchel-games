@@ -24,7 +24,7 @@ def gradDescentAveraging(f, T, w_0, L=2, xbounds=[[-10,10]]): # ASSUMING SMOOTH
 
         # I changed this to exclude the 0th iterate    
         avg_ws.append((1/t)*np.sum(w_ts[1:]))
-        print(avg_ws)
+        #print(avg_ws)
     return avg_ws
 
 # Cumulative gradient descent BOUNDED CASE
@@ -79,11 +79,11 @@ def singleGradientCallExtraGradientWithAveraging(f, T, w_0, phi, L=2, xbounds=[[
         q_1 = -gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
         w_t = phi.fenchel_grad(q_1, 1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_ts.append(projection(w_t, xbounds))
-        print(w_ts[-1])
+        #print(w_ts[-1])
         q_2 = -gamma*alphas[t]*f.grad(w_ts[-1]) + phi.grad(w_halfs[-1])
         w_t_12 = phi.fenchel_grad(q_2, 1) #-gamma*f.grad(w_ts[-1]) + w_halfs[-1] #argmin(alpha_ts[t]*np.dot(w, f.grad(w_ts[-1])) + bregmanDivergence(phi, w ,w_halfs[-1]))
         w_halfs.append(projection(w_t_12, xbounds))
-        print("w[%d] = %lf, whalf[%d] = %lf" % (t, w_ts[-1], t, w_halfs[-1]))
+        #print("w[%d] = %lf, whalf[%d] = %lf" % (t, w_ts[-1], t, w_halfs[-1]))
         avg_ws.append((1/(t))*np.sum(w_ts[1:]))
 
     return avg_ws
