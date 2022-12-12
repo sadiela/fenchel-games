@@ -40,9 +40,9 @@ def cumulativeGradientDescent(f, T, w_0, R, G, xbounds=[[-10,10]]):
     x_ts.append(w_0)
     
     for t in range(1,T):
-        x_t = projection(x_ts[-1] + eta*f.grad(w_ts[-1]), xbounds)
+        x_t = projection(x_ts[-1] - eta*f.grad(w_ts[-1]), xbounds)
         x_ts.append(x_t)
-        w_t = (1-(1/t))*w_ts[-1] - (1/t)*x_t
+        w_t = (1-(1/t))*w_ts[-1] + (1/t)*x_t
         w_ts.append(projection(w_t, xbounds))
     return w_ts
 
