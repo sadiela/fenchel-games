@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import csv as csv
 from ol_algorithms import *
 from convex_functions import *
+from algorithm_comparison import *
 
 def projection(x, bounds):
     # projection into hypercube
@@ -321,18 +322,6 @@ class Fenchel_Game:
 
 
 if __name__ == "__main__":
-
-
-    ftrl = FTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, eta = eta, reg = phi, bounds = xbounds, prescient = False)
-    omd = OMD(f = f_game, d = d, weights = alpha_t, z0 = x_0, y0 = x_0, eta_t = eta_t, bounds = xbounds, prescient = False)
-    optimistic_omd = OOMD(f = f_game, d = d, weights = alpha_t, x0 = x_0, xminushalf = x_0, y0 = x_0, yminushalf = x_0, eta_t = eta_t, bounds = XBOUNDS, yfirst = False)
-    optimistic_ftrl = OFTRL(f = f_game, d = d, weights = alpha_t, z0 = x_0, reg = phi, bounds = xbounds)
-    bestresp = BestResponse(f = f_game, d = d, weights = alpha_t, z0 = x_0, xbounds = xbounds, ybounds = ybounds)
-    ftl = FTL(f = f_game, d = d, weights = alpha_t, z0 = x_0, bounds = ybounds, prescient = True)
-    optimistic_ftl = OFTL(f = f_game, d = d, weights = alpha_t, z0 = f_opt.grad(x_0), bounds = ybounds)
-
-    game_xbar, _ = run_helper(f_game = f_game, x_alg = ftrl, y_alg = optimistic_ftl, T = T + 1, d = d, weights = alpha_t, xbounds = xbounds, ybounds = ybounds, yfirst = True)
-      
     
     '''T = 1000
     alpha_t = np.ones(shape = (1, T), dtype = int)
